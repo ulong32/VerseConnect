@@ -1,0 +1,15 @@
+{
+  "appId": "jp.aipri.verseconnect",
+  "productName": "VerseConnect",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "src/electron.js",
+    "src/preload.js",
+    {
+      "from": "build",
+      "to": ""
+    }
+  ]
+}
