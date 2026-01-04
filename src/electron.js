@@ -42,6 +42,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     backgroundColor: 'whitesmoke',
     titleBarStyle: 'default',
+    title: 'VerseConnect',
     autoHideMenuBar: true,
     trafficLightPosition: {
       x: 17,
