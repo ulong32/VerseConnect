@@ -43,6 +43,7 @@ function createWindow() {
     backgroundColor: 'whitesmoke',
     titleBarStyle: 'default',
     title: 'VerseConnect',
+    icon: path.join(__dirname, 'lib/assets/favicon.png'),
     autoHideMenuBar: true,
     trafficLightPosition: {
       x: 17,

@@ -7,9 +7,13 @@
   "files": [
     "src/electron.js",
     "src/preload.js",
+    "src/lib/assets/favicon.png",
     {
       "from": "build",
       "to": ""
     }
-  ]
+  ],
+  "win": {
+    "icon": "src/lib/assets/favicon.png"
+  }
 }

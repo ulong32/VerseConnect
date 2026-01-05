@@ -1,24 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { MoveUpIcon, CheckIcon } from '@lucide/svelte';
-	import SettingsPanel from '$lib/components/SettingsPanel.svelte';
+	import { MoveUpIcon, CheckIcon, RotateCcwIcon } from '@lucide/svelte';
 	import SearchPanel from '$lib/components/SearchPanel.svelte';
 	import ImageTile from '$lib/components/ImageTile.svelte';
 	import ImageModal from '$lib/components/ImageModal.svelte';
 	import BulkEditPanel from '$lib/components/BulkEditPanel.svelte';
-
-	// Character presets
-	const CHARACTER_PRESETS = ['ひまり', 'みつき', 'つむぎ', 'サクラ', 'タマキ', 'アイリ', 'リンリン', 'チィ', 'じゅりあ', 'える', 'すばる', 'おとめ', 'ビビ', 'リング'];
+	import { 
+		settingsState,
+		getAllCharacters,
+		loadSettings,
+		addCustomCharacter
+	} from '$lib/stores/settings.svelte';
 
 	// State
-	let folderPath = $state('');
 	let images: ImageInfo[] = $state([]);
 	let isLoading = $state(false);
 	let selectedImage: ImageInfo | null = $state(null);
 	let selectedIndex = $state(-1);
 
 	// Metadata state
-	let customCharacters: string[] = $state([]);
 	let currentMetadata: ImageMetadata = $state({ characters: [], item: '' });
 	let newCharacterInput = $state('');
 	let showMetadataEditor = $state(false);
@@ -28,6 +28,9 @@
 	let searchItem: string = $state('');
 	let sortOrder = $state<'asc' | 'desc' | 'none'>('desc');
 	let friendCardFilter = $state<'all' | 'with' | 'without'>('all');
+	let noCharacterFilter = $state(false);
+	let noItemFilter = $state(false);
+	let exactCharacterMatch = $state(false);
 
 	// Scroll state
 	let showScrollTop = $state(false);
@@ -42,18 +45,26 @@
 	let isDragging = $state(false);
 	let isExtracting = $state(false);
 
-	// All available characters (presets + custom)
-	let allCharacters = $derived([...CHARACTER_PRESETS, ...customCharacters]);
-
 	// Filtered and sorted images
+
 	let filteredImages = $derived.by(() => {
 		let result = images;
 		
-		// Filter by characters (AND - must have all selected characters)
+		// Filter by characters
 		if (searchCharacters.length > 0) {
-			result = result.filter(img => 
-				searchCharacters.every(c => img.metadata?.characters?.includes(c))
-			);
+			if (exactCharacterMatch) {
+				// Exact match: image must have exactly the selected characters (no more, no less)
+				result = result.filter(img => {
+					const imgChars = img.metadata?.characters || [];
+					if (imgChars.length !== searchCharacters.length) return false;
+					return searchCharacters.every(c => imgChars.includes(c));
+				});
+			} else {
+				// Partial match (AND - must have all selected characters, but can have more)
+				result = result.filter(img => 
+					searchCharacters.every(c => img.metadata?.characters?.includes(c))
+				);
+			}
 		}
 		
 		// Filter by item (exact match)
@@ -66,6 +77,16 @@
 			result = result.filter(img => !!img.metadata?.friend_card);
 		} else if (friendCardFilter === 'without') {
 			result = result.filter(img => !img.metadata?.friend_card);
+		}
+		
+		// Filter by missing character info
+		if (noCharacterFilter) {
+			result = result.filter(img => !img.metadata?.characters || img.metadata.characters.length === 0);
+		}
+		
+		// Filter by missing item info
+		if (noItemFilter) {
+			result = result.filter(img => !img.metadata?.item || img.metadata.item.trim() === '');
 		}
 		
 		// Sort by date first, then by serial number
@@ -91,23 +112,19 @@
 
 	// Load settings and images on mount
 	onMount(async () => {
-		if (window.electronAPI) {
-			const settings = await window.electronAPI.getSettings();
-			customCharacters = settings.customCharacters || [];
-			if (settings.folderPath) {
-				folderPath = settings.folderPath;
-				await loadImages();
-			}
+		await loadSettings();
+		if (settingsState.folderPath) {
+			await loadImages();
 		}
 	});
 
 	// Load images from the selected folder
 	async function loadImages() {
-		if (!folderPath || !window.electronAPI) return;
+		if (!settingsState.folderPath || !window.electronAPI) return;
 		
 		isLoading = true;
 		try {
-			images = await window.electronAPI.getImages(folderPath);
+			images = await window.electronAPI.getImages(settingsState.folderPath);
 		} catch (error) {
 			console.error('Failed to load images:', error);
 			images = [];
@@ -116,17 +133,7 @@
 		}
 	}
 
-	// Open folder selection dialog
-	async function selectFolder() {
-		if (!window.electronAPI) return;
-		
-		const selected = await window.electronAPI.selectFolder();
-		if (selected) {
-			folderPath = selected;
-			await window.electronAPI.setSettings({ folderPath: selected });
-			await loadImages();
-		}
-	}
+
 
 	// Open fullscreen modal
 	async function openImage(image: ImageInfo, index: number) {
@@ -193,18 +200,10 @@
 	}
 
 	// Add a custom character
-	async function addCustomCharacter() {
-		const trimmed = newCharacterInput.trim();
-		if (!trimmed || allCharacters.includes(trimmed)) {
+	async function handleAddCharacter() {
+		const success = await addCustomCharacter(newCharacterInput);
+		if (success) {
 			newCharacterInput = '';
-			return;
-		}
-		customCharacters = [...customCharacters, trimmed];
-		newCharacterInput = '';
-		
-		// Save custom characters to settings
-		if (window.electronAPI) {
-			await window.electronAPI.setSettings({ customCharacters: $state.snapshot(customCharacters) });
 		}
 	}
 
@@ -215,13 +214,13 @@
 
 	// Select friend card file
 	async function selectFriendCard(file: File) {
-		if (!window.electronAPI || !folderPath || !selectedImage) return;
+		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
 		
 		// Read file as base64
 		const reader = new FileReader();
 		reader.onload = async () => {
 			const base64 = (reader.result as string).split(',')[1]; // Remove data:image/... prefix
-			const result = await window.electronAPI.saveFriendCard(folderPath, file.name, base64);
+			const result = await window.electronAPI.saveFriendCard(settingsState.folderPath, file.name, base64);
 			
 			if (result.success) {
 				currentMetadata.friend_card = file.name;
@@ -234,15 +233,15 @@
 
 	// Save metadata
 	async function saveMetadata() {
-		if (!window.electronAPI || !folderPath || !selectedImage) return;
+		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
 		
 		// Use $state.snapshot to get plain object for IPC
 		const metadataToSave = $state.snapshot(currentMetadata);
 		
 		// Calculate the correct folder path (handle subfolders)
 		const targetFolder = selectedImage.folder 
-			? `${folderPath}/${selectedImage.folder}`.replace(/\\/g, '/')
-			: folderPath;
+			? `${settingsState.folderPath}/${selectedImage.folder}`.replace(/\\/g, '/')
+			: settingsState.folderPath;
 		
 		await window.electronAPI.setImageMetadata(targetFolder, selectedImage.name, metadataToSave);
 		
@@ -315,8 +314,8 @@
 			
 			// Calculate correct folder
 			const targetFolder = img.folder 
-				? `${folderPath}/${img.folder}`.replace(/\\\\/g, '/')
-				: folderPath;
+				? `${settingsState.folderPath}/${img.folder}`.replace(/\\\\/g, '/')
+				: settingsState.folderPath;
 			
 			await window.electronAPI.setImageMetadata(targetFolder, img.name, newMetadata);
 			
@@ -336,7 +335,7 @@
 	// Drag & Drop handlers for ZIP files
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
-		if (folderPath && e.dataTransfer?.types.includes('Files')) {
+		if (settingsState.folderPath && e.dataTransfer?.types.includes('Files')) {
 			isDragging = true;
 		}
 	}
@@ -349,7 +348,7 @@
 		e.preventDefault();
 		isDragging = false;
 		
-		if (!folderPath || !window.electronAPI || !e.dataTransfer?.files) return;
+		if (!settingsState.folderPath || !window.electronAPI || !e.dataTransfer?.files) return;
 		
 		const files = Array.from(e.dataTransfer.files);
 		const zipFiles = files.filter(f => f.name.toLowerCase().endsWith('.zip'));
@@ -365,7 +364,7 @@
 		for (const file of zipFiles) {
 			// Electron extends File with path property
 			const filePath = (file as File & { path: string }).path;
-			const result = await window.electronAPI.extractZip(filePath, folderPath);
+			const result = await window.electronAPI.extractZip(filePath, settingsState.folderPath);
 			if (result.success) {
 				totalExtracted += result.extracted;
 			} else {
@@ -394,23 +393,41 @@
 	ondrop={handleDrop}
 	role="application"
 >
-	<!-- Settings Panel -->
-	<SettingsPanel {folderPath} onselect={selectFolder} onreload={loadImages} />
+	<!-- Reload Button -->
+	{#if settingsState.folderPath}
+		<div class="flex items-center gap-2 mb-4">
+			<button 
+				class="px-3 py-2 bg-white/10 hover:bg-white/20 border-none rounded-lg text-white cursor-pointer transition-all flex items-center gap-2"
+				onclick={loadImages}
+				title="再読み込み"
+			>
+				<RotateCcwIcon class="w-5 h-5" />
+				再読み込み
+			</button>
+			<span class="text-gray-400 text-sm">{settingsState.folderPath}</span>
+		</div>
+	{/if}
 
 	<!-- Search Panel -->
 	{#if images.length > 0}
 		<SearchPanel 
-			characters={allCharacters} 
+			characters={getAllCharacters()} 
 			selectedCharacters={searchCharacters}
 			{searchItem}
 			{sortOrder}
 			{friendCardFilter}
 			{isMultiSelectMode}
+			{noCharacterFilter}
+			{noItemFilter}
+			{exactCharacterMatch}
 			oncharacterselect={(chars) => searchCharacters = chars}
 			onitemsearch={(item) => searchItem = item}
 			onsortchange={(order) => sortOrder = order}
 			onfriendcardfilterchange={(f) => friendCardFilter = f}
 			ontogglemultiselect={toggleMultiSelectMode}
+			onnocharacterfilterchange={(v) => noCharacterFilter = v}
+			onnoitemfilterchange={(v) => noItemFilter = v}
+			onexactcharactermatchchange={(v) => exactCharacterMatch = v}
 		/>
 	{/if}
 
@@ -420,7 +437,7 @@
 			<div class="col-span-full flex items-center justify-center h-48 text-gray-500 text-xl">読み込み中...</div>
 		{:else if images.length === 0}
 			<div class="col-span-full flex items-center justify-center h-48 text-gray-500 text-xl">
-				{#if folderPath}
+				{#if settingsState.folderPath}
 					画像が見つかりません
 				{:else}
 					フォルダを選択して画像を表示
@@ -460,17 +477,17 @@
 	<ImageModal
 		{selectedImage}
 		{currentMetadata}
-		{allCharacters}
+		allCharacters={getAllCharacters()}
 		{newCharacterInput}
 		{showMetadataEditor}
 		{selectedIndex}
-		{folderPath}
+		folderPath={settingsState.folderPath}
 		totalImages={filteredImages.length}
 		onclose={closeModal}
 		onprev={prevImage}
 		onnext={nextImage}
 		ontogglecharacter={toggleCharacter}
-		onaddcharacter={addCustomCharacter}
+		onaddcharacter={handleAddCharacter}
 		onupdateitem={updateItem}
 		onsave={saveMetadata}
 		oninputchange={(v) => newCharacterInput = v}
@@ -494,7 +511,7 @@
 {#if isMultiSelectMode}
 	<BulkEditPanel 
 		selectedCount={selectedImages.size}
-		characters={allCharacters}
+		characters={getAllCharacters()}
 		{isApplying}
 		progress={bulkProgress}
 		oncancel={cancelBulkEdit}
@@ -508,7 +525,7 @@
 		<div class="bg-gray-900/90 rounded-2xl p-8 text-center border-2 border-dashed border-purple-500">
 			<div class="text-5xl mb-4">📦</div>
 			<p class="text-white text-xl font-medium">ZIPファイルをドロップして解凍</p>
-			<p class="text-gray-400 text-sm mt-2">画像を{folderPath}に追加します</p>
+			<p class="text-gray-400 text-sm mt-2">画像を{settingsState.folderPath}に追加します</p>
 		</div>
 	</div>
 {/if}

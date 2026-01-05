@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SearchIcon, TagIcon, UserRoundIcon, ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, SquareCheckIcon, UsersIcon } from '@lucide/svelte';
+	import { SearchIcon, TagIcon, UserRoundIcon, ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, SquareCheckIcon, UsersIcon, UserXIcon, CircleSlash2Icon, EqualIcon } from '@lucide/svelte';
 	interface Props {
 		characters: string[];
 		selectedCharacters: string[];
@@ -7,14 +7,20 @@
 		sortOrder: 'asc' | 'desc' | 'none';
 		friendCardFilter: 'all' | 'with' | 'without';
 		isMultiSelectMode: boolean;
+		noCharacterFilter: boolean;
+		noItemFilter: boolean;
+		exactCharacterMatch: boolean;
 		oncharacterselect: (characters: string[]) => void;
 		onitemsearch: (item: string) => void;
 		onsortchange: (order: 'asc' | 'desc' | 'none') => void;
 		onfriendcardfilterchange: (filter: 'all' | 'with' | 'without') => void;
 		ontogglemultiselect: () => void;
+		onnocharacterfilterchange: (value: boolean) => void;
+		onnoitemfilterchange: (value: boolean) => void;
+		onexactcharactermatchchange: (value: boolean) => void;
 	}
 
-	let { characters, selectedCharacters, searchItem, sortOrder, friendCardFilter, isMultiSelectMode, oncharacterselect, onitemsearch, onsortchange, onfriendcardfilterchange, ontogglemultiselect }: Props = $props();
+	let { characters, selectedCharacters, searchItem, sortOrder, friendCardFilter, isMultiSelectMode, noCharacterFilter, noItemFilter, exactCharacterMatch, oncharacterselect, onitemsearch, onsortchange, onfriendcardfilterchange, ontogglemultiselect, onnocharacterfilterchange, onnoitemfilterchange, onexactcharactermatchchange }: Props = $props();
 
 	function toggleCharacter(char: string) {
 		if (selectedCharacters.includes(char)) {
@@ -24,11 +30,7 @@
 		}
 	}
 
-	function clearAll() {
-		oncharacterselect([]);
-		onitemsearch('');
-		onfriendcardfilterchange('all');
-	}
+
 
 	function cycleSortOrder() {
 		if (sortOrder === 'asc') onsortchange('desc');
@@ -42,7 +44,15 @@
 		else onfriendcardfilterchange('all');
 	}
 
-	let hasFilter = $derived(selectedCharacters.length > 0 || searchItem.length > 0 || friendCardFilter !== 'all');
+	let hasFilter = $derived(selectedCharacters.length > 0 || searchItem.length > 0 || friendCardFilter !== 'all' || noCharacterFilter || noItemFilter);
+
+	function clearAll() {
+		oncharacterselect([]);
+		onitemsearch('');
+		onfriendcardfilterchange('all');
+		onnocharacterfilterchange(false);
+		onnoitemfilterchange(false);
+	}
 </script>
 
 <div class="bg-white/5 rounded-xl p-3 mb-4 backdrop-blur-sm">
@@ -95,6 +105,26 @@
 				フレカ無
 			{/if}
 		</button>
+
+		<!-- No Character Filter -->
+		<button 
+			class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 {noCharacterFilter ? 'bg-orange-600/50 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+			onclick={() => onnocharacterfilterchange(!noCharacterFilter)}
+			title="キャラクター未登録で絞り込み"
+		>
+			<UserXIcon class="w-6 h-6 scale-[5/6]" />
+			キャラ無
+		</button>
+
+		<!-- No Item Filter -->
+		<button 
+			class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 {noItemFilter ? 'bg-orange-600/50 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+			onclick={() => onnoitemfilterchange(!noItemFilter)}
+			title="アイテム名未登録で絞り込み"
+		>
+			<CircleSlash2Icon class="w-6 h-6 scale-[5/6]" />
+			アイテム無
+		</button>
 		
 		{#if hasFilter}
 			<button 
@@ -119,6 +149,17 @@
 				{char}
 			</button>
 		{/each}
+		<!-- Exact Match Toggle -->
+		{#if selectedCharacters.length > 0}
+			<button 
+				class="px-2 py-0.5 text-xs rounded-full transition-colors flex items-center gap-1 ml-2 {exactCharacterMatch ? 'bg-yellow-600/70 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+				onclick={() => onexactcharactermatchchange(!exactCharacterMatch)}
+				title="完全一致：選択したキャラクターのみが写っている画像を表示"
+			>
+				<EqualIcon class="w-3 h-3" />
+				完全一致
+			</button>
+		{/if}
 	</div>
 	
 	<!-- Item Search -->
