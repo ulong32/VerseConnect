@@ -1,27 +1,37 @@
 <script lang="ts">
-	import { ImageIcon } from '@lucide/svelte';
+	import { ImageIcon, TagIcon } from '@lucide/svelte';
 	
 	interface Props {
 		allCharacters: string[];
+		allTags: string[];
 		currentMetadata: ImageMetadata;
 		newCharacterInput: string;
+		newTagInput: string;
 		ontogglecharacter: (char: string) => void;
+		ontoggletag: (tag: string) => void;
 		onaddcharacter: () => void;
+		onaddtag: () => void;
 		onupdateitem: (value: string) => void;
 		onsave: () => void;
 		oninputchange: (value: string) => void;
+		ontaginputchange: (value: string) => void;
 		onselectfriendcard: (file: File) => void;
 	}
 
 	let { 
 		allCharacters, 
+		allTags,
 		currentMetadata, 
 		newCharacterInput,
+		newTagInput,
 		ontogglecharacter, 
+		ontoggletag,
 		onaddcharacter, 
+		onaddtag,
 		onupdateitem, 
 		onsave,
 		oninputchange,
+		ontaginputchange,
 		onselectfriendcard
 	}: Props = $props();
 
@@ -63,6 +73,45 @@
 			<button
 				class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm transition-colors"
 				onclick={onaddcharacter}
+			>
+				追加
+			</button>
+		</div>
+	</div>
+
+	<!-- Tag Selection -->
+	<div class="mb-4">
+		<span class="block text-white text-sm font-medium mb-2 flex items-center gap-1">
+			<TagIcon class="w-4 h-4" />
+			タグ
+		</span>
+		{#if allTags.length > 0}
+			<div class="flex flex-wrap gap-2 mb-3">
+				{#each allTags as tag}
+					<button
+						class="px-3 py-1.5 rounded-full text-sm transition-all {(currentMetadata.tags || []).includes(tag) 
+							? 'bg-teal-600 text-white' 
+							: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
+						onclick={() => ontoggletag(tag)}
+					>
+						{tag}
+					</button>
+				{/each}
+			</div>
+		{/if}
+		<!-- Add Custom Tag -->
+		<div class="flex gap-2">
+			<input
+				type="text"
+				value={newTagInput}
+				oninput={(e) => ontaginputchange(e.currentTarget.value)}
+				placeholder="新しいタグ"
+				class="flex-1 px-3 py-1.5 bg-white/10 text-white rounded-lg border border-white/20 focus:border-teal-500 focus:outline-none text-sm"
+				onkeydown={(e) => e.key === 'Enter' && onaddtag()}
+			/>
+			<button
+				class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm transition-colors"
+				onclick={onaddtag}
 			>
 				追加
 			</button>

@@ -4,12 +4,18 @@ export const CHARACTER_PRESETS = ['ひまり', 'みつき', 'つむぎ', 'サク
 // Reactive state using Svelte 5 runes
 export const settingsState = $state({
   folderPath: '',
-  customCharacters: [] as string[]
+  customCharacters: [] as string[],
+  customTags: [] as string[]
 });
 
 // Derived value: all characters (presets + custom) - exported as getter function
 export function getAllCharacters(): string[] {
   return [...CHARACTER_PRESETS, ...settingsState.customCharacters];
+}
+
+// Get all tags - exported as getter function
+export function getAllTags(): string[] {
+  return [...settingsState.customTags];
 }
 
 // Load settings from Electron API
@@ -18,6 +24,7 @@ export async function loadSettings(): Promise<void> {
 
   const settings = await window.electronAPI.getSettings();
   settingsState.customCharacters = settings.customCharacters || [];
+  settingsState.customTags = settings.customTags || [];
   if (settings.folderPath) {
     settingsState.folderPath = settings.folderPath;
   }
@@ -66,3 +73,28 @@ export async function removeCustomCharacter(name: string): Promise<void> {
     await window.electronAPI.setSettings({ customCharacters: $state.snapshot(settingsState.customCharacters) });
   }
 }
+
+// Add a custom tag
+export async function addCustomTag(name: string): Promise<boolean> {
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+
+  if (getAllTags().includes(trimmed)) return false;
+
+  settingsState.customTags = [...settingsState.customTags, trimmed];
+
+  if (window.electronAPI) {
+    await window.electronAPI.setSettings({ customTags: $state.snapshot(settingsState.customTags) });
+  }
+  return true;
+}
+
+// Remove a custom tag
+export async function removeCustomTag(name: string): Promise<void> {
+  settingsState.customTags = settingsState.customTags.filter(t => t !== name);
+
+  if (window.electronAPI) {
+    await window.electronAPI.setSettings({ customTags: $state.snapshot(settingsState.customTags) });
+  }
+}
+

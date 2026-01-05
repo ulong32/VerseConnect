@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { MoveUpIcon, CheckIcon, RotateCcwIcon } from '@lucide/svelte';
+	import { MoveUpIcon, CheckIcon, RotateCcwIcon, EyeIcon, EyeOffIcon } from '@lucide/svelte';
 	import SearchPanel from '$lib/components/SearchPanel.svelte';
 	import ImageTile from '$lib/components/ImageTile.svelte';
 	import ImageModal from '$lib/components/ImageModal.svelte';
@@ -8,8 +8,10 @@
 	import { 
 		settingsState,
 		getAllCharacters,
+		getAllTags,
 		loadSettings,
-		addCustomCharacter
+		addCustomCharacter,
+		addCustomTag
 	} from '$lib/stores/settings.svelte';
 
 	// State
@@ -19,21 +21,30 @@
 	let selectedIndex = $state(-1);
 
 	// Metadata state
-	let currentMetadata: ImageMetadata = $state({ characters: [], item: '' });
+	let currentMetadata: ImageMetadata = $state({ characters: [], item: '', tags: [] });
 	let newCharacterInput = $state('');
+	let newTagInput = $state('');
 	let showMetadataEditor = $state(false);
 
 	// Search state
 	let searchCharacters: string[] = $state([]);
+	let searchTags: string[] = $state([]);
 	let searchItem: string = $state('');
 	let sortOrder = $state<'asc' | 'desc' | 'none'>('desc');
 	let friendCardFilter = $state<'all' | 'with' | 'without'>('all');
 	let noCharacterFilter = $state(false);
 	let noItemFilter = $state(false);
+	let noTagFilter = $state(false);
 	let exactCharacterMatch = $state(false);
+	let exactTagMatch = $state(false);
 
 	// Scroll state
 	let showScrollTop = $state(false);
+
+	// Infinite scroll state
+	const BATCH_SIZE = 24;
+	let displayCount = $state(BATCH_SIZE);
+	let sentinelRef: HTMLDivElement | null = $state(null);
 
 	// Multi-select / bulk edit state
 	let isMultiSelectMode = $state(false);
@@ -44,6 +55,9 @@
 	// Drag & Drop state
 	let isDragging = $state(false);
 	let isExtracting = $state(false);
+
+	// Tile display state
+	let showTileInfo = $state(true);
 
 	// Filtered and sorted images
 
@@ -89,6 +103,28 @@
 			result = result.filter(img => !img.metadata?.item || img.metadata.item.trim() === '');
 		}
 		
+		// Filter by tags
+		if (searchTags.length > 0) {
+			if (exactTagMatch) {
+				// Exact match: image must have exactly the selected tags (no more, no less)
+				result = result.filter(img => {
+					const imgTags = img.metadata?.tags || [];
+					if (imgTags.length !== searchTags.length) return false;
+					return searchTags.every(t => imgTags.includes(t));
+				});
+			} else {
+				// Partial match (AND - must have all selected tags, but can have more)
+				result = result.filter(img => 
+					searchTags.every(t => img.metadata?.tags?.includes(t))
+				);
+			}
+		}
+		
+		// Filter by missing tag info
+		if (noTagFilter) {
+			result = result.filter(img => !img.metadata?.tags || img.metadata.tags.length === 0);
+		}
+		
 		// Sort by date first, then by serial number
 		if (sortOrder !== 'none') {
 			result = [...result].sort((a, b) => {
@@ -108,6 +144,34 @@
 		}
 		
 		return result;
+	});
+
+	// Displayed images (sliced for infinite scroll)
+	let displayedImages = $derived(filteredImages.slice(0, displayCount));
+
+	// Reset displayCount when filters change
+	$effect(() => {
+		// Access filteredImages to track it
+		filteredImages;
+		displayCount = BATCH_SIZE;
+	});
+
+	// Intersection observer for infinite scroll
+	$effect(() => {
+		if (!sentinelRef) return;
+		
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && displayCount < filteredImages.length) {
+					displayCount = Math.min(displayCount + BATCH_SIZE, filteredImages.length);
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		
+		observer.observe(sentinelRef);
+		
+		return () => observer.disconnect();
 	});
 
 	// Load settings and images on mount
@@ -142,7 +206,7 @@
 		showMetadataEditor = false;
 		
 		// Load metadata for this image (use cached if available)
-		currentMetadata = image.metadata || { characters: [], item: '' };
+		currentMetadata = image.metadata || { characters: [], item: '', tags: [] };
 	}
 
 	// Close fullscreen modal
@@ -150,7 +214,7 @@
 		selectedImage = null;
 		selectedIndex = -1;
 		showMetadataEditor = false;
-		currentMetadata = { characters: [], item: '' };
+		currentMetadata = { characters: [], item: '', tags: [] };
 	}
 
 	// Navigate to previous image (in filtered order)
@@ -158,7 +222,7 @@
 		if (selectedIndex > 0) {
 			selectedIndex--;
 			selectedImage = filteredImages[selectedIndex];
-			currentMetadata = selectedImage.metadata || { characters: [], item: '' };
+			currentMetadata = selectedImage.metadata || { characters: [], item: '', tags: [] };
 		}
 	}
 
@@ -167,7 +231,7 @@
 		if (selectedIndex < filteredImages.length - 1) {
 			selectedIndex++;
 			selectedImage = filteredImages[selectedIndex];
-			currentMetadata = selectedImage.metadata || { characters: [], item: '' };
+			currentMetadata = selectedImage.metadata || { characters: [], item: '', tags: [] };
 		}
 	}
 
@@ -199,11 +263,31 @@
 		}
 	}
 
+	// Toggle tag selection
+	function toggleTag(tag: string) {
+		const tags = currentMetadata.tags || [];
+		if (tags.includes(tag)) {
+			currentMetadata.tags = tags.filter(t => t !== tag);
+		} else {
+			currentMetadata.tags = [...tags, tag];
+		}
+	}
+
 	// Add a custom character
 	async function handleAddCharacter() {
 		const success = await addCustomCharacter(newCharacterInput);
 		if (success) {
 			newCharacterInput = '';
+		}
+	}
+
+	// Add a custom tag
+	async function handleAddTag() {
+		const success = await addCustomTag(newTagInput);
+		if (success) {
+			// Also add the tag to the current metadata
+			toggleTag(newTagInput);
+			newTagInput = '';
 		}
 	}
 
@@ -285,7 +369,7 @@
 		selectedImages = new Set();
 	}
 
-	async function applyBulkCharacters(characters: string[]) {
+	async function applyBulkCharacters(characters: string[], overwrite: boolean = false) {
 		if (!window.electronAPI || selectedImages.size === 0) return;
 		
 		isApplying = true;
@@ -303,13 +387,16 @@
 				continue;
 			}
 			
-			// Merge new characters with existing
-			const existingChars = img.metadata?.characters || [];
-			const newChars = [...new Set([...existingChars, ...characters])];
+			// Either overwrite or merge characters
+			const newChars = overwrite 
+				? characters 
+				: [...new Set([...(img.metadata?.characters || []), ...characters])];
 			
-			const newMetadata = {
+			const newMetadata: ImageMetadata = {
 				characters: newChars,
-				item: img.metadata?.item || ''
+				item: img.metadata?.item || '',
+				friend_card: img.metadata?.friend_card,
+				tags: img.metadata?.tags || []
 			};
 			
 			// Calculate correct folder
@@ -413,22 +500,49 @@
 		<SearchPanel 
 			characters={getAllCharacters()} 
 			selectedCharacters={searchCharacters}
+			tags={getAllTags()}
+			selectedTags={searchTags}
 			{searchItem}
 			{sortOrder}
 			{friendCardFilter}
 			{isMultiSelectMode}
 			{noCharacterFilter}
 			{noItemFilter}
+			{noTagFilter}
 			{exactCharacterMatch}
+			{exactTagMatch}
 			oncharacterselect={(chars) => searchCharacters = chars}
+			ontagselect={(tags) => searchTags = tags}
 			onitemsearch={(item) => searchItem = item}
 			onsortchange={(order) => sortOrder = order}
 			onfriendcardfilterchange={(f) => friendCardFilter = f}
 			ontogglemultiselect={toggleMultiSelectMode}
 			onnocharacterfilterchange={(v) => noCharacterFilter = v}
 			onnoitemfilterchange={(v) => noItemFilter = v}
+			onnotagfilterchange={(v) => noTagFilter = v}
 			onexactcharactermatchchange={(v) => exactCharacterMatch = v}
+			onexacttagmatchchange={(v) => exactTagMatch = v}
 		/>
+	{/if}
+
+	<!-- Tile Info Toggle -->
+	{#if images.length > 0}
+		<div class="flex items-center justify-between mb-2 px-2">
+			<span class="text-gray-400 text-sm">{filteredImages.length}件のプリフォト</span>
+			<button
+				class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors {showTileInfo ? 'bg-purple-600/50 text-white hover:bg-purple-500/50' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+				onclick={() => showTileInfo = !showTileInfo}
+				title={showTileInfo ? '情報を非表示' : '情報を表示'}
+			>
+				{#if showTileInfo}
+					<EyeIcon class="w-4 h-4" />
+					<span>情報表示中</span>
+				{:else}
+					<EyeOffIcon class="w-4 h-4" />
+					<span>情報非表示</span>
+				{/if}
+			</button>
+		</div>
 	{/if}
 
 	<!-- Image Grid -->
@@ -448,7 +562,7 @@
 				検索結果がありません
 			</div>
 		{:else}
-			{#each filteredImages as image, index}
+			{#each displayedImages as image, index}
 				<div class="h-fit relative">
 					{#if isMultiSelectMode}
 						<button 
@@ -461,13 +575,26 @@
 									<CheckIcon class="w-4 h-4 text-white" />
 								{/if}
 							</div>
-							<ImageTile {image} onclick={() => {}} />
+							<ImageTile {image} onclick={() => {}} showInfo={showTileInfo} />
 						</button>
 					{:else}
-						<ImageTile {image} onclick={() => openImage(image, index)}  />
+						<ImageTile {image} onclick={() => openImage(image, index)} showInfo={showTileInfo} />
 					{/if}
 				</div>
 			{/each}
+			
+			<!-- Sentinel element for infinite scroll -->
+			{#if displayCount < filteredImages.length}
+				<div 
+					bind:this={sentinelRef}
+					class="col-span-full flex items-center justify-center h-24 text-gray-500"
+				>
+					<div class="flex items-center gap-2">
+						<div class="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+						<span>読み込み中... ({displayCount}/{filteredImages.length})</span>
+					</div>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -478,7 +605,9 @@
 		{selectedImage}
 		{currentMetadata}
 		allCharacters={getAllCharacters()}
+		allTags={getAllTags()}
 		{newCharacterInput}
+		{newTagInput}
 		{showMetadataEditor}
 		{selectedIndex}
 		folderPath={settingsState.folderPath}
@@ -487,10 +616,13 @@
 		onprev={prevImage}
 		onnext={nextImage}
 		ontogglecharacter={toggleCharacter}
+		ontoggletag={toggleTag}
 		onaddcharacter={handleAddCharacter}
+		onaddtag={handleAddTag}
 		onupdateitem={updateItem}
 		onsave={saveMetadata}
 		oninputchange={(v) => newCharacterInput = v}
+		ontaginputchange={(v) => newTagInput = v}
 		ontoggleeditor={() => showMetadataEditor = !showMetadataEditor}
 		onselectfriendcard={selectFriendCard}
 	/>

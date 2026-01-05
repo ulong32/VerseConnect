@@ -12,14 +12,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // electron-storeはESMで動的インポート
-/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[]}> | undefined} */
+/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[]}> | undefined} */
 let store;
 async function initStore() {
   const Store = (await import('electron-store')).default;
+  // @ts-expect-error
   store = new Store({
     defaults: {
       folderPath: '',
-      customCharacters: []
+      customCharacters: [],
+      customTags: []
     }
   });
 }
@@ -41,7 +43,12 @@ function createWindow() {
 
   const mainWindow = new BrowserWindow({
     backgroundColor: 'whitesmoke',
-    titleBarStyle: 'default',
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#120b18',
+      symbolColor: '#ffffff',
+      height: 32
+    },
     title: 'VerseConnect',
     icon: path.join(__dirname, 'lib/assets/favicon.png'),
     autoHideMenuBar: true,
@@ -82,11 +89,6 @@ contextMenu({
   showLookUpSelection: false,
   showSearchWithGoogle: false,
   showCopyImage: false,
-  prepend: (defaultActions, params, browserWindow) => [
-    {
-      label: 'Make App 💻',
-    },
-  ],
 });
 
 /**
@@ -162,10 +164,10 @@ function setupIpcHandlers() {
      * 再帰的にフォルダを走査して画像を収集
      * @param {string} currentPath - 現在のフォルダパス
      * @param {string} relativePath - ルートからの相対パス
-     * @returns {Array<{name: string, path: string, url: string, metadata: object|null, folder: string}>} 画像情報の配列
+     * @returns {Array<{name: string, path: string, url: string, metadata: object|null, folder: string, extractedDate: string|null, serial: number|null}>} 画像情報の配列
      */
     const scanFolder = (currentPath, relativePath = '') => {
-      /** @type {Array<{name: string, path: string, url: string, metadata: object|null, folder: string}>} */
+      /** @type {Array<{name: string, path: string, url: string, metadata: object|null, folder: string, extractedDate: string|null, serial: number|null}>} */
       const images = [];
 
       try {
@@ -229,7 +231,8 @@ function setupIpcHandlers() {
   ipcMain.handle('get-settings', async () => {
     return {
       folderPath: store?.get('folderPath') || '',
-      customCharacters: store?.get('customCharacters') || []
+      customCharacters: store?.get('customCharacters') || [],
+      customTags: store?.get('customTags') || []
     };
   });
 
@@ -240,6 +243,9 @@ function setupIpcHandlers() {
     }
     if (settings.customCharacters !== undefined) {
       store?.set('customCharacters', settings.customCharacters);
+    }
+    if (settings.customTags !== undefined) {
+      store?.set('customTags', settings.customTags);
     }
     return true;
   });

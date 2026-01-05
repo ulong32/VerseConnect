@@ -1,12 +1,14 @@
 <script lang="ts">
 	import MetadataEditor from './MetadataEditor.svelte';
-	import { FolderOpenIcon, ArrowLeftRightIcon, PenIcon, XIcon, ArrowLeftIcon, ArrowRightIcon } from '@lucide/svelte';
+	import { FolderOpenIcon, ArrowLeftRightIcon, PenIcon, XIcon, ArrowLeftIcon, ArrowRightIcon, TagIcon } from '@lucide/svelte';
 
 	interface Props {
 		selectedImage: ImageInfo;
 		currentMetadata: ImageMetadata;
 		allCharacters: string[];
+		allTags: string[];
 		newCharacterInput: string;
+		newTagInput: string;
 		showMetadataEditor: boolean;
 		selectedIndex: number;
 		totalImages: number;
@@ -15,10 +17,13 @@
 		onprev: () => void;
 		onnext: () => void;
 		ontogglecharacter: (char: string) => void;
+		ontoggletag: (tag: string) => void;
 		onaddcharacter: () => void;
+		onaddtag: () => void;
 		onupdateitem: (value: string) => void;
 		onsave: () => void;
 		oninputchange: (value: string) => void;
+		ontaginputchange: (value: string) => void;
 		ontoggleeditor: () => void;
 		onselectfriendcard: (file: File) => void;
 	}
@@ -27,7 +32,9 @@
 		selectedImage,
 		currentMetadata,
 		allCharacters,
+		allTags,
 		newCharacterInput,
+		newTagInput,
 		showMetadataEditor,
 		selectedIndex,
 		totalImages,
@@ -36,10 +43,13 @@
 		onprev,
 		onnext,
 		ontogglecharacter,
+		ontoggletag,
 		onaddcharacter,
+		onaddtag,
 		onupdateitem,
 		onsave,
 		oninputchange,
+		ontaginputchange,
 		ontoggleeditor,
 		onselectfriendcard
 	}: Props = $props();
@@ -74,7 +84,7 @@
 
 
 <div 
-	class="fixed inset-0 bg-black/95 flex items-start justify-center z-50 animate-fade-in overflow-y-auto py-8"
+	class="fixed inset-0 bg-black/95 flex items-start justify-center z-40 animate-fade-in overflow-y-auto py-8"
 	onclick={onclose} 
 	onkeydown={(e) => e.key === 'Escape' && onclose()} 
 	role="dialog" 
@@ -126,6 +136,13 @@
 			{#if currentMetadata.item}
 				<span class="px-2 py-1 bg-blue-600/50 text-white text-sm rounded-lg">{currentMetadata.item}</span>
 			{/if}
+			{#if currentMetadata.tags && currentMetadata.tags.length > 0}
+				{#each currentMetadata.tags as tag}
+					<span class="px-2 py-1 bg-teal-600/50 text-white text-sm rounded-full flex items-center gap-1">
+						<TagIcon class="w-3 h-3" />{tag}
+					</span>
+				{/each}
+			{/if}
 			<button 
 				class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors"
 				onclick={ontoggleeditor}
@@ -148,13 +165,18 @@
 		{#if showMetadataEditor}
 			<MetadataEditor
 				{allCharacters}
+				{allTags}
 				{currentMetadata}
 				{newCharacterInput}
+				{newTagInput}
 				{ontogglecharacter}
+				{ontoggletag}
 				{onaddcharacter}
+				{onaddtag}
 				{onupdateitem}
 				{onsave}
 				{oninputchange}
+				{ontaginputchange}
 				{onselectfriendcard}
 			/>
 		{/if}

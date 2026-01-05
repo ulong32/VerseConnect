@@ -6,6 +6,7 @@ declare global {
 		characters: string[];
 		item: string;
 		friend_card?: string;  // Filename of linked friend card image
+		tags?: string[];  // User-defined custom tags
 	}
 
 	interface ImageInfo {
@@ -25,6 +26,7 @@ declare global {
 	interface Settings {
 		folderPath: string;
 		customCharacters: string[];
+		customTags: string[];  // App-wide tag presets
 	}
 
 	interface ZipExtractionResult {
