@@ -38,8 +38,8 @@ let mainWindow = null;
 
 function createWindow() {
   let windowState = windowStateManager({
-    defaultWidth: 800,
-    defaultHeight: 600,
+    defaultWidth: 1280,
+    defaultHeight: 720,
   });
 
   const mainWindow = new BrowserWindow({
@@ -573,6 +573,84 @@ function setupIpcHandlers() {
   ipcMain.handle('aipri-clear-session', async () => {
     store?.set('aipriSession', null);
     return { success: true };
+  });
+
+  // Fetch photos from myphoto-list API
+  ipcMain.handle('aipri-fetch-photos', async (event, targetYm) => {
+    const sessionCookies = store?.get('aipriSession');
+
+    if (!sessionCookies) {
+      return { success: false, error: 'セッションがありません。ログインしてください。' };
+    }
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('target_ym', targetYm);
+      formData.append('data_count', '999');
+
+      const response = await net.fetch(`${AIPRI_BASE_URL}/mypage/api/myphoto-list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          'User-Agent': AIPRI_USER_AGENT,
+          'Cookie': sessionCookies
+        },
+        body: formData.toString()
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `APIエラー (${response.status})` };
+      }
+
+      const result = await response.json();
+
+      if (result.code !== '00') {
+        return { success: false, error: result.message || 'APIエラーが発生しました' };
+      }
+
+      return {
+        success: true,
+        photos: result.data?.photo_list || []
+      };
+    } catch (error) {
+      console.error('Fetch photos error:', error);
+      return { success: false, error: `通信エラー: ${String(error)}` };
+    }
+  });
+
+  // Download a single photo and save to folder
+  ipcMain.handle('aipri-download-photo', async (event, url, filename, folderPath) => {
+    if (!url || !filename || !folderPath) {
+      return { success: false, error: '無効なパラメータです' };
+    }
+
+    const targetPath = path.join(folderPath, filename);
+
+    // Check if file already exists
+    if (fs.existsSync(targetPath)) {
+      return { success: true, skipped: true };
+    }
+
+    try {
+      const response = await net.fetch(url, {
+        headers: {
+          'User-Agent': AIPRI_USER_AGENT
+        }
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `ダウンロードエラー (${response.status})` };
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      fs.writeFileSync(targetPath, buffer);
+
+      return { success: true, skipped: false };
+    } catch (error) {
+      console.error('Download photo error:', error);
+      return { success: false, error: `ダウンロードエラー: ${String(error)}` };
+    }
   });
 }
 

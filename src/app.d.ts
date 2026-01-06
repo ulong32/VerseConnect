@@ -65,6 +65,27 @@ declare global {
 		success: boolean;
 	}
 
+	interface AipriPhoto {
+		photo_seq: number;
+		play_date: string;
+		photo_file_url: string;
+		thumb_file_url: string;
+		page_path: string;
+		friend_card_flg: 0 | 1;
+	}
+
+	interface AipriFetchPhotosResult {
+		success: boolean;
+		photos?: AipriPhoto[];
+		error?: string;
+	}
+
+	interface AipriDownloadResult {
+		success: boolean;
+		skipped?: boolean;
+		error?: string;
+	}
+
 	interface ElectronAPI {
 		selectFolder: () => Promise<string | null>;
 		getImages: (folderPath: string) => Promise<ImageInfo[]>;
@@ -79,6 +100,8 @@ declare global {
 		aipriLogin: (credentials: AipriLoginCredentials) => Promise<AipriLoginResult>;
 		aipriCheckSession: () => Promise<AipriSessionCheckResult>;
 		aipriClearSession: () => Promise<AipriClearSessionResult>;
+		aipriFetchPhotos: (targetYm: string) => Promise<AipriFetchPhotosResult>;
+		aipriDownloadPhoto: (url: string, filename: string, folderPath: string) => Promise<AipriDownloadResult>;
 	}
 
 	namespace App {

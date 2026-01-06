@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeftIcon, LogInIcon, LogOutIcon, AlertCircleIcon, CheckCircleIcon, LoaderIcon } from '@lucide/svelte';
+	import { ArrowLeftIcon, LogInIcon, LogOutIcon, AlertCircleIcon, CheckCircleIcon, LoaderIcon, DownloadIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { 
@@ -29,6 +29,124 @@
 
 	// Loading state
 	let isLoggingIn = $state(false);
+
+	// Import state
+	let selectedYm = $state('');
+	let isImporting = $state(false);
+	let importProgress = $state({ current: 0, total: 0, skipped: 0 });
+	let importResult = $state<{ success: boolean; message: string } | null>(null);
+	let folderPath = $state('');
+
+	// Generate year-month options
+	function getYmOptions(): { value: string; label: string }[] {
+		const now = new Date();
+		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+		const formatYm = (d: Date) => {
+			return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
+		};
+
+		const formatLabel = (d: Date) => {
+			return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+		};
+
+		return [
+			{ value: formatYm(thisMonth), label: `今月 (${formatLabel(thisMonth)})` },
+			{ value: formatYm(lastMonth), label: `先月 (${formatLabel(lastMonth)})` }
+		];
+	}
+
+	const ymOptions = getYmOptions();
+
+	// Helper: delay function
+	const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+	// Import photos
+	async function handleImport() {
+		if (!selectedYm || isImporting) return;
+
+		// Get folder path from settings
+		const settings = await window.electronAPI.getSettings();
+		folderPath = settings.folderPath;
+
+		if (!folderPath) {
+			importResult = { success: false, message: 'フォルダが設定されていません。設定画面で保存先フォルダを選択してください。' };
+			return;
+		}
+
+		isImporting = true;
+		importResult = null;
+		importProgress = { current: 0, total: 0, skipped: 0 };
+
+		try {
+			// Fetch photo list
+			const fetchResult = await window.electronAPI.aipriFetchPhotos(selectedYm);
+
+			if (!fetchResult.success || !fetchResult.photos) {
+				importResult = { success: false, message: fetchResult.error || 'フォトリストの取得に失敗しました' };
+				isImporting = false;
+				return;
+			}
+
+			const photos = fetchResult.photos;
+
+			if (photos.length === 0) {
+				importResult = { success: true, message: 'この月の写真は見つかりませんでした' };
+				isImporting = false;
+				return;
+			}
+
+			importProgress.total = photos.length;
+
+			let downloadedCount = 0;
+			let skippedCount = 0;
+			let errorCount = 0;
+
+			// Download each photo with delay
+			for (const photo of photos) {
+				const filename = `aipriverse_album_${photo.play_date.replace(/-/g, '')}_${photo.photo_seq}.jpg`;
+
+				const result = await window.electronAPI.aipriDownloadPhoto(
+					photo.photo_file_url,
+					filename,
+					folderPath
+				);
+
+				if (result.success) {
+					if (result.skipped) {
+						skippedCount++;
+					} else {
+						downloadedCount++;
+					}
+				} else {
+					errorCount++;
+					console.error('Download failed:', photo.photo_file_url, result.error);
+				}
+
+				importProgress.current++;
+				importProgress.skipped = skippedCount;
+
+				// Wait 200ms before next download
+				if (importProgress.current < photos.length) {
+					await delay(200);
+				}
+			}
+
+			// Build result message
+			if (downloadedCount === 0 && skippedCount === photos.length) {
+				importResult = { success: true, message: '新しい写真はありませんでした（すべて既存）' };
+			} else if (errorCount > 0) {
+				importResult = { success: false, message: `${downloadedCount}枚をインポート、${skippedCount}枚をスキップ、${errorCount}枚がエラー` };
+			} else {
+				importResult = { success: true, message: `${downloadedCount}枚をインポートしました${skippedCount > 0 ? `（${skippedCount}枚は既存のためスキップ）` : ''}` };
+			}
+		} catch (error) {
+			importResult = { success: false, message: `エラーが発生しました: ${String(error)}` };
+		} finally {
+			isImporting = false;
+		}
+	}
 
 	// Validation functions
 	function validateCardId(value: string): string {
@@ -186,6 +304,10 @@
 	// Check session on mount
 	onMount(() => {
 		checkSession();
+		// Set default selected month
+		if (ymOptions.length > 0) {
+			selectedYm = ymOptions[0].value;
+		}
 	});
 </script>
 
@@ -225,13 +347,88 @@
 						</div>
 					{/if}
 
-					<button
-						class="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 flex items-center justify-center gap-2"
-						onclick={handleLogout}
-					>
-						<LogOutIcon class="w-5 h-5" />
-						ログアウト
-					</button>
+					<!-- Import Section -->
+					<div class="border-t border-white/10 pt-6 mt-6">
+						<h3 class="text-md font-semibold text-white mb-4 flex items-center gap-2">
+							<DownloadIcon class="w-5 h-5 text-purple-400" />
+							フォトをインポート
+						</h3>
+
+						<!-- Month Selection -->
+						<div class="mb-4">
+							<label for="targetYm" class="block text-sm font-medium text-gray-300 mb-2">
+								対象月
+							</label>
+							<select
+								id="targetYm"
+								class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+								bind:value={selectedYm}
+								disabled={isImporting}
+							>
+								{#each ymOptions as option}
+									<option value={option.value} class="bg-gray-800">{option.label}</option>
+								{/each}
+							</select>
+						</div>
+
+						<!-- Import Button -->
+						<button
+							class="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2 mb-4"
+							onclick={handleImport}
+							disabled={isImporting || !selectedYm}
+						>
+							{#if isImporting}
+								<LoaderIcon class="w-5 h-5 animate-spin" />
+								インポート中...
+							{:else}
+								<DownloadIcon class="w-5 h-5" />
+								インポート開始
+							{/if}
+						</button>
+
+						<!-- Progress Bar -->
+						{#if isImporting && importProgress.total > 0}
+							<div class="bg-white/10 rounded-lg p-4 mb-4">
+								<div class="flex justify-between text-sm text-gray-300 mb-2">
+									<span>ダウンロード中... {importProgress.current} / {importProgress.total}</span>
+									{#if importProgress.skipped > 0}
+										<span class="text-gray-400">({importProgress.skipped}件スキップ)</span>
+									{/if}
+								</div>
+								<div class="w-full bg-white/20 rounded-full h-2">
+									<div 
+										class="bg-gradient-to-r from-emerald-400 to-teal-500 h-2 rounded-full transition-all duration-300"
+										style="width: {(importProgress.current / importProgress.total) * 100}%"
+									></div>
+								</div>
+							</div>
+						{/if}
+
+						<!-- Result Message -->
+						{#if importResult}
+							<div class="p-3 rounded-lg {importResult.success ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}">
+								<p class="{importResult.success ? 'text-green-300' : 'text-red-300'} flex items-center gap-2">
+									{#if importResult.success}
+										<CheckCircleIcon class="w-5 h-5" />
+									{:else}
+										<AlertCircleIcon class="w-5 h-5" />
+									{/if}
+									{importResult.message}
+								</p>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Logout Button -->
+					<div class="border-t border-white/10 pt-6 mt-6">
+						<button
+							class="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 flex items-center justify-center gap-2"
+							onclick={handleLogout}
+						>
+							<LogOutIcon class="w-5 h-5" />
+							ログアウト
+						</button>
+					</div>
 				</div>
 			</section>
 		{:else}

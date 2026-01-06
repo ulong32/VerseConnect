@@ -28,4 +28,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aipriLogin: (credentials) => ipcRenderer.invoke('aipri-login', credentials),
   aipriCheckSession: () => ipcRenderer.invoke('aipri-check-session'),
   aipriClearSession: () => ipcRenderer.invoke('aipri-clear-session'),
+  aipriFetchPhotos: (targetYm) => ipcRenderer.invoke('aipri-fetch-photos', targetYm),
+  aipriDownloadPhoto: (url, filename, folderPath) => ipcRenderer.invoke('aipri-download-photo', url, filename, folderPath),
 });
