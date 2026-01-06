@@ -1,5 +1,5 @@
 import windowStateManager from 'electron-window-state';
-import { app, BrowserWindow, ipcMain, dialog, protocol, net, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net, shell, session } from 'electron';
 import contextMenu from 'electron-context-menu';
 import serve from 'electron-serve';
 import path from 'path';
@@ -457,12 +457,35 @@ function setupIpcHandlers() {
           'Origin': AIPRI_BASE_URL
         },
         body: formData.toString(),
-        redirect: 'follow'
+        redirect: 'follow',
+        credentials: 'include',
+        bypassCustomProtocolHandlers: true
       });
 
       // Get cookies from response
       const setCookies = response.headers.getSetCookie();
-      const cookies = parseCookies(setCookies);
+      let cookies = parseCookies(setCookies);
+
+      // If no cookies in headers (due to redirect:follow), get from session
+      if (!cookies) {
+        try {
+          // Get cookies for both root and /mypage/ path (MYPAPSSID has path=/mypage/)
+          const rootCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
+          const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+
+          // Combine and dedupe cookies
+          const allCookies = [...rootCookies, ...mypageCookies];
+          const uniqueCookies = allCookies.filter((cookie, index, self) =>
+            index === self.findIndex(c => c.name === cookie.name)
+          );
+
+          cookies = uniqueCookies
+            .map(c => `${c.name}=${c.value}`)
+            .join('; ');
+        } catch (err) {
+          console.error('Error getting cookies from session:', err);
+        }
+      }
 
       // Store session cookies if present
       if (cookies) {
@@ -501,8 +524,16 @@ function setupIpcHandlers() {
   // Check if session is still valid
   ipcMain.handle('aipri-check-session', async () => {
     const sessionCookies = store?.get('aipriSession');
+
     if (!sessionCookies) {
       return { valid: false, reason: 'セッションがありません' };
+    }
+
+    // Check if MYPAPSSID cookie exists
+    const hasMYPAPSSID = sessionCookies.includes('MYPAPSSID=');
+    if (!hasMYPAPSSID) {
+      store?.set('aipriSession', null);
+      return { valid: false, reason: 'セッションCookieが無効です' };
     }
 
     try {
@@ -512,19 +543,18 @@ function setupIpcHandlers() {
           'User-Agent': AIPRI_USER_AGENT,
           'Cookie': sessionCookies
         },
-        redirect: 'manual'
+        redirect: 'follow'
       });
 
-      // If we get redirected to login, session is expired
-      if (response.status === 302) {
-        const location = response.headers.get('location');
-        if (location && location.includes('login')) {
-          store?.set('aipriSession', null);
-          return { valid: false, reason: 'セッションが期限切れです' };
-        }
+      // Check final URL - if we ended up at login page, session is expired
+      const finalUrl = response.url;
+
+      if (finalUrl.includes('/mypage/login') || finalUrl.includes('/login')) {
+        store?.set('aipriSession', null);
+        return { valid: false, reason: 'セッションが期限切れです' };
       }
 
-      if (response.status === 200) {
+      if (response.ok) {
         const html = await response.text();
         const profileImage = extractProfileImage(html);
         return { valid: true, profileImageUrl: profileImage };
