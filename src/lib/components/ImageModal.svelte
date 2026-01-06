@@ -94,13 +94,13 @@
 >
 
 	<div
-		class="relative max-w-[95vw] flex flex-col items-center my-auto" 
+		class="relative max-w-[95vw] max-h-[calc(95vh-80px)] flex flex-col items-center my-auto" 
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.stopPropagation()}
 		role="presentation"
 		aria-label="画像コンテンツ"
 	>
-		<img class="max-w-full max-h-[calc(95vh-60px)] p-12 object-contain rounded-lg" src={displayUrl} alt={selectedImage.name} />
+		<img class="max-w-[calc(95vw-60px)] max-h-[calc(95vh-60px)] p-12 object-contain rounded-lg" src={displayUrl} alt={selectedImage.name} />
 		
 		<div class="mt-4 text-white text-base text-center flex items-center gap-2">
 			<span>{selectedImage.name}</span>

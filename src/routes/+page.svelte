@@ -480,20 +480,6 @@
 	ondrop={handleDrop}
 	role="application"
 >
-	<!-- Reload Button -->
-	{#if settingsState.folderPath}
-		<div class="flex items-center gap-2 mb-4">
-			<button 
-				class="px-3 py-2 bg-white/10 hover:bg-white/20 border-none rounded-lg text-white cursor-pointer transition-all flex items-center gap-2"
-				onclick={loadImages}
-				title="再読み込み"
-			>
-				<RotateCcwIcon class="w-5 h-5" />
-				再読み込み
-			</button>
-			<span class="text-gray-400 text-sm">{settingsState.folderPath}</span>
-		</div>
-	{/if}
 
 	<!-- Search Panel -->
 	{#if images.length > 0}
@@ -525,10 +511,19 @@
 		/>
 	{/if}
 
-	<!-- Tile Info Toggle -->
+	<!-- Tile Info Toggle & Reload -->
 	{#if images.length > 0}
 		<div class="flex items-center justify-between mb-2 px-2">
-			<span class="text-gray-400 text-sm">{filteredImages.length}件のプリフォト</span>
+			<div class="flex items-center gap-3">
+				<span class="text-gray-400 text-sm">{filteredImages.length}件のプリフォト</span>
+				<button 
+					class="flex items-center gap-1 px-2 py-1 size-8 bg-white/10 hover:bg-white/20 border-none rounded-lg text-gray-400 hover:text-white cursor-pointer transition-all text-sm"
+					onclick={loadImages}
+					title="再読み込み"
+				>
+					<RotateCcwIcon class="size-4" />
+				</button>
+			</div>
 			<button
 				class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors {showTileInfo ? 'bg-purple-600/50 text-white hover:bg-purple-500/50' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
 				onclick={() => showTileInfo = !showTileInfo}
@@ -544,6 +539,7 @@
 			</button>
 		</div>
 	{/if}
+
 
 	<!-- Image Grid -->
 	<div class="flex-1 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] auto-rows-auto gap-3 p-2 content-start">

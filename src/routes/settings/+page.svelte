@@ -73,7 +73,10 @@
 <div class="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6">
 	<div class="max-w-2xl mx-auto">
 		<!-- Header -->
-		<div class="flex items-center gap-4 mb-8">
+		<div class="flex items-center align-center gap-4 mb-8">
+			<button onclick={() => goto('/')}>
+				<ArrowLeftIcon class="size-8 text-white bg-white/10 rounded-lg p-1" />
+			</button>
 			<h1 class="text-2xl font-bold text-white">設定</h1>
 		</div>
 

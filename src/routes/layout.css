@@ -5,6 +5,19 @@
 @import '@skeletonlabs/skeleton-svelte'; 
 @import '@skeletonlabs/skeleton/themes/nouveau';
 
+/* Custom Fonts */
+@font-face {
+	font-family: 'M PLUS Rounded 1c';
+	src: url('/MPLUSRounded1c_subset.woff2') format('woff2');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+.font-mplus-rounded {
+	font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+
 /* Global styles for gallery app */
 :root {
 	color-scheme: dark;

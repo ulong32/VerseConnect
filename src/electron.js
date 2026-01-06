@@ -69,6 +69,9 @@ function createWindow() {
     y: windowState.y,
     width: windowState.width,
     height: windowState.height,
+    fullscreenable: false,
+    fullscreen: false,
+    frame: false,
   });
 
   windowState.manage(mainWindow);
