@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // electron-storeはESMで動的インポート
-/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[]}> | undefined} */
+/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[], aipriSession: string | null}> | undefined} */
 let store;
 async function initStore() {
   const Store = (await import('electron-store')).default;
@@ -21,7 +21,8 @@ async function initStore() {
     defaults: {
       folderPath: '',
       customCharacters: [],
-      customTags: []
+      customTags: [],
+      aipriSession: null
     }
   });
 }
@@ -385,6 +386,163 @@ function setupIpcHandlers() {
       console.error('Error saving friend card:', error);
       return { success: false, error: String(error) };
     }
+  });
+
+  // ===== Aipri.jp API Handlers =====
+
+  const AIPRI_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const AIPRI_BASE_URL = 'https://aipri.jp';
+
+  /**
+   * Parse Set-Cookie header and extract cookies
+   * @param {string[]} setCookieHeaders
+   * @returns {string}
+   */
+  const parseCookies = (setCookieHeaders) => {
+    if (!setCookieHeaders || setCookieHeaders.length === 0) return '';
+    return setCookieHeaders
+      .map(cookie => cookie.split(';')[0])
+      .join('; ');
+  };
+
+  /**
+   * Extract profile image URL from HTML
+   * @param {string} html
+   * @returns {string | null}
+   */
+  const extractProfileImage = (html) => {
+    // Find img with class containing "profile_thumbImage"
+    const match = html.match(/<img[^>]*class="[^"]*profile_thumbImage[^"]*"[^>]*src="([^"]+)"/);
+    if (match && match[1]) {
+      // If relative URL, make it absolute
+      const src = match[1];
+      if (src.startsWith('/')) {
+        return AIPRI_BASE_URL + src;
+      }
+      return src;
+    }
+    // Try alternate pattern where src comes before class
+    const altMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*profile_thumbImage[^"]*"/);
+    if (altMatch && altMatch[1]) {
+      const src = altMatch[1];
+      if (src.startsWith('/')) {
+        return AIPRI_BASE_URL + src;
+      }
+      return src;
+    }
+    return null;
+  };
+
+  // Aipri Login Handler
+  ipcMain.handle('aipri-login', async (event, credentials) => {
+    const { cardId, name, birthdayM, birthdayD } = credentials;
+
+    try {
+      // Build form data
+      const formData = new URLSearchParams();
+      formData.append('val[card_id]', cardId);
+      formData.append('val[name]', name);
+      formData.append('val[birthdayM]', birthdayM);
+      formData.append('val[birthdayD]', birthdayD);
+
+      const loginUrl = `${AIPRI_BASE_URL}/mypage/login`;
+
+      // Make login request - follow redirects automatically
+      const response = await net.fetch(loginUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': AIPRI_USER_AGENT,
+          'Referer': loginUrl,
+          'Origin': AIPRI_BASE_URL
+        },
+        body: formData.toString(),
+        redirect: 'follow'
+      });
+
+      // Get cookies from response
+      const setCookies = response.headers.getSetCookie();
+      const cookies = parseCookies(setCookies);
+
+      // Store session cookies if present
+      if (cookies) {
+        store?.set('aipriSession', cookies);
+      }
+
+      // Check the final URL to determine if login succeeded
+      // If we ended up at login page, login failed
+      const finalUrl = response.url;
+
+      if (!response.ok) {
+        return { success: false, error: `サーバーエラー (${response.status})` };
+      }
+
+      const html = await response.text();
+
+      // Check if we're still on the login page (login failed)
+      if (finalUrl.includes('/login') || html.includes('id="loginForm"') || html.includes('ログインフォーム')) {
+        return { success: false, error: 'ログインに失敗しました。入力情報を確認してください。' };
+      }
+
+      // Extract profile image
+      const profileImage = extractProfileImage(html);
+
+      return {
+        success: true,
+        profileImageUrl: profileImage,
+        redirectUrl: finalUrl
+      };
+    } catch (error) {
+      console.error('Aipri login error:', error);
+      return { success: false, error: `通信エラー: ${String(error)}` };
+    }
+  });
+
+  // Check if session is still valid
+  ipcMain.handle('aipri-check-session', async () => {
+    const sessionCookies = store?.get('aipriSession');
+    if (!sessionCookies) {
+      return { valid: false, reason: 'セッションがありません' };
+    }
+
+    try {
+      // Try to access mypage to check if session is valid
+      const response = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
+        headers: {
+          'User-Agent': AIPRI_USER_AGENT,
+          'Cookie': sessionCookies
+        },
+        redirect: 'manual'
+      });
+
+      // If we get redirected to login, session is expired
+      if (response.status === 302) {
+        const location = response.headers.get('location');
+        if (location && location.includes('login')) {
+          store?.set('aipriSession', null);
+          return { valid: false, reason: 'セッションが期限切れです' };
+        }
+      }
+
+      if (response.status === 200) {
+        const html = await response.text();
+        const profileImage = extractProfileImage(html);
+        return { valid: true, profileImageUrl: profileImage };
+      }
+
+      // Unexpected response
+      store?.set('aipriSession', null);
+      return { valid: false, reason: `予期しないレスポンス (${response.status})` };
+    } catch (error) {
+      console.error('Session check error:', error);
+      return { valid: false, reason: `通信エラー: ${String(error)}` };
+    }
+  });
+
+  // Clear session
+  ipcMain.handle('aipri-clear-session', async () => {
+    store?.set('aipriSession', null);
+    return { success: true };
   });
 }
 

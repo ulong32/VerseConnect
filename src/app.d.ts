@@ -41,6 +41,30 @@ declare global {
 		error?: string;
 	}
 
+	interface AipriLoginCredentials {
+		cardId: string;
+		name: string;
+		birthdayM: string;
+		birthdayD: string;
+	}
+
+	interface AipriLoginResult {
+		success: boolean;
+		error?: string;
+		profileImageUrl?: string | null;
+		redirectUrl?: string;
+	}
+
+	interface AipriSessionCheckResult {
+		valid: boolean;
+		reason?: string;
+		profileImageUrl?: string | null;
+	}
+
+	interface AipriClearSessionResult {
+		success: boolean;
+	}
+
 	interface ElectronAPI {
 		selectFolder: () => Promise<string | null>;
 		getImages: (folderPath: string) => Promise<ImageInfo[]>;
@@ -51,6 +75,10 @@ declare global {
 		extractZip: (zipPath: string, targetFolder: string) => Promise<ZipExtractionResult>;
 		showItemInFolder: (filePath: string) => Promise<boolean>;
 		saveFriendCard: (folderPath: string, filename: string, base64Data: string) => Promise<FriendCardResult>;
+		// Aipri API
+		aipriLogin: (credentials: AipriLoginCredentials) => Promise<AipriLoginResult>;
+		aipriCheckSession: () => Promise<AipriSessionCheckResult>;
+		aipriClearSession: () => Promise<AipriClearSessionResult>;
 	}
 
 	namespace App {

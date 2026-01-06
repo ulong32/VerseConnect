@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import faviconPng from '$lib/assets/favicon.png';
-	import { SettingsIcon } from '@lucide/svelte';
+	import { SettingsIcon, DownloadIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
 	let { children } = $props();
@@ -42,23 +42,42 @@
 			<img src={faviconPng} alt="VerseConnect" class="w-5 h-5 rounded-full transition-transform duration-500 hover:rotate-20 hover:scale-125 transform-gpu {isSpinning ? 'rotate-[360deg]' : ''} {skipTransition ? 'transition-none' : ''}">
 			<span class="font-medium text-md font-mplus-rounded">VerseConnect</span>
 		</div>
-		<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/settings')} style="-webkit-app-region: no-drag;">
-			<Tooltip positioning={{placement: 'bottom'}}>
-				<Tooltip.Trigger>
-					<SettingsIcon class="w-4 h-4" />
-				</Tooltip.Trigger>
-				<Portal>
-					<Tooltip.Positioner>
-						<Tooltip.Content class="bg-surface-100-900 text-white p-1 rounded-lg text-xs">
-							<Tooltip.Arrow class="[--arrow-size:--spacing(2)] [--arrow-background:var(--color-surface-100-900)]">
-								<Tooltip.ArrowTip />
-							</Tooltip.Arrow>
-							設定
-						</Tooltip.Content>
-					</Tooltip.Positioner>
-				</Portal>
-			</Tooltip>
-		</button>
+		<div class="flex items-center gap-1">
+			<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/import')} style="-webkit-app-region: no-drag;">
+				<Tooltip positioning={{placement: 'bottom'}}>
+					<Tooltip.Trigger>
+						<DownloadIcon class="w-4 h-4" />
+					</Tooltip.Trigger>
+					<Portal>
+						<Tooltip.Positioner>
+							<Tooltip.Content class="bg-surface-100-900 text-white p-1 rounded-lg text-xs">
+								<Tooltip.Arrow class="[--arrow-size:--spacing(2)] [--arrow-background:var(--color-surface-100-900)]">
+									<Tooltip.ArrowTip />
+								</Tooltip.Arrow>
+								インポート
+							</Tooltip.Content>
+						</Tooltip.Positioner>
+					</Portal>
+				</Tooltip>
+			</button>
+			<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/settings')} style="-webkit-app-region: no-drag;">
+				<Tooltip positioning={{placement: 'bottom'}}>
+					<Tooltip.Trigger>
+						<SettingsIcon class="w-4 h-4" />
+					</Tooltip.Trigger>
+					<Portal>
+						<Tooltip.Positioner>
+							<Tooltip.Content class="bg-surface-100-900 text-white p-1 rounded-lg text-xs">
+								<Tooltip.Arrow class="[--arrow-size:--spacing(2)] [--arrow-background:var(--color-surface-100-900)]">
+									<Tooltip.ArrowTip />
+								</Tooltip.Arrow>
+								設定
+							</Tooltip.Content>
+						</Tooltip.Positioner>
+					</Portal>
+				</Tooltip>
+			</button>
+		</div>
 	</nav>
 </header>
 <svelte:head><link rel="icon" href={faviconPng} /></svelte:head>
