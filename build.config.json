@@ -5,8 +5,8 @@
     "output": "dist"
   },
   "files": [
-    "src/electron.js",
-    "src/preload.js",
+    "src/main/**/*",
+    "src/preload.cjs",
     "src/lib/assets/favicon.png",
     {
       "from": "build",
