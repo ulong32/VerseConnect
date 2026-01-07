@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { CheckIcon, PlusIcon, PencilIcon, XIcon, CheckCircleIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
+	import { CheckIcon, PlusIcon, PencilIcon, XIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
+	import { Avatar } from '@skeletonlabs/skeleton-svelte';
 	import { 
 		sessionState, 
 		switchAccount, 
@@ -68,19 +69,16 @@
         title={account.name}
       >
         <!-- Profile image or default avatar -->
-        <div class="w-12 h-12 rounded-full overflow-hidden bg-white/10 border-2 border-white/20 hover:border-purple-400 transition-colors">
-          {#if getProfileImageUrl(account)}
-            <img
-              src={getProfileImageUrl(account)}
-              alt={account.name}
-              class="w-full h-full object-cover"
-            />
-          {:else}
-            <div class="w-full h-full flex items-center justify-center">
-              <UserIcon class="w-6 h-6 text-gray-400" />
-            </div>
-          {/if}
-        </div>
+        <Avatar class="size-12 overflow-hidden bg-white/10 border-2 border-white/20 hover:border-purple-400 transition-colors">
+          <Avatar.Image 
+            src={getProfileImageUrl(account) || ''} 
+            alt={account.name} 
+            class="w-full h-full object-cover" 
+          />
+          <Avatar.Fallback class="w-full h-full flex items-center justify-center">
+            <UserIcon class="w-6 h-6 text-gray-400" />
+          </Avatar.Fallback>
+        </Avatar>
         <!-- Active checkmark -->
         {#if account.name === sessionState.activeAccountName && !sessionState.isEditMode}
           <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">

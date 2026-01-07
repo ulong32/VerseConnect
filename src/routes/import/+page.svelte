@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ArrowLeftIcon, LogInIcon, LogOutIcon, AlertCircleIcon, CheckCircleIcon, LoaderIcon, DownloadIcon, XIcon } from '@lucide/svelte';
+	import { ArrowLeftIcon, LogInIcon, LogOutIcon, CircleAlertIcon, LoaderIcon, DownloadIcon, XIcon, CircleCheckBigIcon } from '@lucide/svelte';
+	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { 
@@ -366,7 +367,7 @@
 			<section class="mb-8">
 				<div class="bg-white/5 rounded-xl p-6 backdrop-blur-sm">
 					<div class="flex items-center gap-4 mb-4">
-						<CheckCircleIcon class="w-6 h-6 text-green-400" />
+						<CircleCheckBigIcon class="w-6 h-6 text-green-400" />
 						<h2 class="text-lg font-semibold text-white">ログイン済み</h2>
 					</div>
 
@@ -418,18 +419,17 @@
 						<!-- Progress Bar -->
 						{#if isImporting && importProgress.total > 0}
 							<div class="bg-white/10 rounded-lg p-4 mb-4">
-								<div class="flex justify-between text-sm text-gray-300 mb-2">
-									<span>ダウンロード中... {importProgress.current} / {importProgress.total}</span>
-									{#if importProgress.skipped > 0}
-										<span class="text-gray-400">({importProgress.skipped}件スキップ)</span>
-									{/if}
-								</div>
-								<div class="w-full bg-white/20 rounded-full h-2">
-									<div 
-										class="bg-gradient-to-r from-emerald-400 to-teal-500 h-2 rounded-full transition-all duration-300"
-										style="width: {(importProgress.current / importProgress.total) * 100}%"
-									></div>
-								</div>
+								<Progress value={(importProgress.current / importProgress.total) * 100} class="w-full space-y-2">
+									<div class="flex justify-between text-sm text-gray-300">
+										<Progress.Label>ダウンロード中... {importProgress.current} / {importProgress.total}</Progress.Label>
+										{#if importProgress.skipped > 0}
+											<span class="text-gray-400">({importProgress.skipped}件スキップ)</span>
+										{/if}
+									</div>
+									<Progress.Track class="bg-white/20 h-2 rounded-full overflow-hidden">
+										<Progress.Range class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full transition-all duration-300" />
+									</Progress.Track>
+								</Progress>
 							</div>
 						{/if}
 
@@ -438,9 +438,9 @@
 							<div class="p-3 rounded-lg {importResult.success ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}">
 								<p class="{importResult.success ? 'text-green-300' : 'text-red-300'} flex items-center gap-2">
 									{#if importResult.success}
-										<CheckCircleIcon class="w-5 h-5" />
+										<CircleCheckBigIcon class="w-5 h-5" />
 									{:else}
-										<AlertCircleIcon class="w-5 h-5" />
+										<CircleAlertIcon class="w-5 h-5" />
 									{/if}
 									{importResult.message}
 								</p>
@@ -496,7 +496,7 @@
 								/>
 								{#if cardIdTouched && cardIdError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<AlertCircleIcon class="w-4 h-4" />
+										<CircleAlertIcon class="w-4 h-4" />
 										{cardIdError}
 									</p>
 								{/if}
@@ -518,7 +518,7 @@
 								/>
 								{#if nameTouched && nameError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<AlertCircleIcon class="w-4 h-4" />
+										<CircleAlertIcon class="w-4 h-4" />
 										{nameError}
 									</p>
 								{/if}
@@ -557,13 +557,13 @@
 								</div>
 								{#if birthdayMTouched && birthdayMError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<AlertCircleIcon class="w-4 h-4" />
+										<CircleAlertIcon class="w-4 h-4" />
 										{birthdayMError}
 									</p>
 								{/if}
 								{#if birthdayDTouched && birthdayDError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<AlertCircleIcon class="w-4 h-4" />
+										<CircleAlertIcon class="w-4 h-4" />
 										{birthdayDError}
 									</p>
 								{/if}
@@ -573,7 +573,7 @@
 							{#if sessionState.error}
 								<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
 									<p class="text-red-300 flex items-center gap-2">
-										<AlertCircleIcon class="w-5 h-5" />
+										<CircleAlertIcon class="w-5 h-5" />
 										{sessionState.error}
 									</p>
 								</div>
@@ -623,7 +623,7 @@
 						/>
 						{#if cardIdTouched && cardIdError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<AlertCircleIcon class="w-4 h-4" />
+								<CircleAlertIcon class="w-4 h-4" />
 								{cardIdError}
 							</p>
 						{/if}
@@ -645,7 +645,7 @@
 						/>
 						{#if nameTouched && nameError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<AlertCircleIcon class="w-4 h-4" />
+								<CircleAlertIcon class="w-4 h-4" />
 								{nameError}
 							</p>
 						{/if}
@@ -683,13 +683,13 @@
 						</div>
 						{#if birthdayMTouched && birthdayMError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<AlertCircleIcon class="w-4 h-4" />
+								<CircleAlertIcon class="w-4 h-4" />
 								{birthdayMError}
 							</p>
 						{/if}
 						{#if birthdayDTouched && birthdayDError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<AlertCircleIcon class="w-4 h-4" />
+								<CircleAlertIcon class="w-4 h-4" />
 								{birthdayDError}
 							</p>
 						{/if}
@@ -699,7 +699,7 @@
 					{#if sessionState.error}
 						<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
 							<p class="text-red-300 flex items-center gap-2">
-								<AlertCircleIcon class="w-5 h-5" />
+								<CircleAlertIcon class="w-5 h-5" />
 								{sessionState.error}
 							</p>
 						</div>

@@ -166,7 +166,7 @@
 					displayCount = Math.min(displayCount + BATCH_SIZE, filteredImages.length);
 				}
 			},
-			{ rootMargin: '200px' }
+			{ rootMargin: '400px' }
 		);
 		
 		observer.observe(sentinelRef);
