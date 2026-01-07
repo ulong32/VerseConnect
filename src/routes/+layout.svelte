@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import faviconPng from '$lib/assets/favicon.png';
-	import { SettingsIcon, DownloadIcon } from '@lucide/svelte';
+	import { SettingsIcon, DownloadIcon, CopyrightIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { Portal, Tooltip, Avatar } from '@skeletonlabs/skeleton-svelte';
 	import LuminaPng from './lumina.png';
@@ -41,7 +41,7 @@
 	<nav class="flex items-center justify-between px-1">
 		<div class="ml-0.5 flex items-center gap-2">
 			<img src={faviconPng} alt="VerseConnect" class="w-5 h-5 rounded-full transition-transform duration-500 hover:rotate-20 hover:scale-125 transform-gpu {isSpinning ? 'rotate-[360deg]' : ''} {skipTransition ? 'transition-none' : ''}">
-			<span class="font-medium text-md font-mplus-rounded">VerseConnect</span>
+			<span class="font-medium text-md font-mplus-rounded text-pink-100">VerseConnect</span>
 		</div>
 		<div class="flex items-center gap-1">
 			<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/import')} style="-webkit-app-region: no-drag;">
@@ -87,14 +87,18 @@
 		{@render children()}
 	</main>
 	<footer>
-	<div class="p-4 bg-surface-100-900 w-full flex items-center justify-center text-xs text-gray-400">
-		VerseConnect &copy; 2026 ulong32 Assisted by Lumina
-		<Avatar class="ml-1 size-6 bg-transparent">
-			<Avatar.Image src={LuminaPng} />
-			<Avatar.Fallback>
-				L
-			</Avatar.Fallback>
-		</Avatar>.
+	<div class="p-4 bg-surface-100-900 w-full flex flex-col items-center justify-center">
+		<div class="flex items-center gap-1 text-xl font-mplus-rounded">VerseConnect</div>
+		<div class="flex items-center gap-1 text-xs text-gray-400">
+			<CopyrightIcon class="size-2.5 ml-1 rotate-[0.03deg]" />
+			2026 ulong32. Assisted by <span class="bg-gradient-to-br from-violet-300 to-sky-300 bg-clip-text text-transparent">Lumina</span>
+			<Avatar class="size-6 bg-transparent">
+				<Avatar.Image src={LuminaPng} />
+				<Avatar.Fallback>
+					L
+				</Avatar.Fallback>
+			</Avatar>.
+		</div>
 	</div>
 </footer>
 </div>
