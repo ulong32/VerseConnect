@@ -70,7 +70,7 @@
 	}
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6">
+<div class="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6">
 	<div class="max-w-2xl mx-auto">
 		<!-- Header -->
 		<div class="flex items-center align-center gap-4 mb-8">

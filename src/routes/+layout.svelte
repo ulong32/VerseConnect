@@ -3,7 +3,8 @@
 	import faviconPng from '$lib/assets/favicon.png';
 	import { SettingsIcon, DownloadIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
-	import { Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
+	import { Portal, Tooltip, Avatar } from '@skeletonlabs/skeleton-svelte';
+	import LuminaPng from './lumina.png';
 	let { children } = $props();
 
 	// Konami Code: ↑↑↓↓←→←→BA
@@ -15,8 +16,8 @@
 	$effect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			inputSequence = [...inputSequence, e.code].slice(-konamiCode.length);
-			
-			if (inputSequence.length === konamiCode.length && 
+
+			if (inputSequence.length === konamiCode.length &&
 				inputSequence.every((key, i) => key === konamiCode[i])) {
 				isSpinning = true;
 				inputSequence = [];
@@ -81,8 +82,19 @@
 	</nav>
 </header>
 <svelte:head><link rel="icon" href={faviconPng} /></svelte:head>
-<div class="mt-[env(titlebar-area-height)] h-[calc(100vh-env(titlebar-area-height))]">
-	{@render children()}
+<div class="flex flex-col w-full pt-[env(titlebar-area-height)] min-h-screen">
+	<main class="flex-1">
+		{@render children()}
+	</main>
+	<footer>
+	<div class="p-4 bg-surface-100-900 w-full flex items-center justify-center text-xs text-gray-400">
+		VerseConnect &copy; 2026 ulong32 Assisted by Lumina
+		<Avatar class="ml-1 size-6 bg-transparent">
+			<Avatar.Image src={LuminaPng} />
+			<Avatar.Fallback>
+				L
+			</Avatar.Fallback>
+		</Avatar>.
+	</div>
+</footer>
 </div>
-
-

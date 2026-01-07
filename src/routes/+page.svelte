@@ -474,7 +474,7 @@
 <svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
 
 <div 
-	class="flex flex-col h-[calc(100vh-50px)] p-4 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative"
+	class="flex flex-col  p-4 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative"
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
