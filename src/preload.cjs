@@ -30,4 +30,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aipriClearSession: () => ipcRenderer.invoke('aipri-clear-session'),
   aipriFetchPhotos: (targetYm) => ipcRenderer.invoke('aipri-fetch-photos', targetYm),
   aipriDownloadPhoto: (url, filename, folderPath) => ipcRenderer.invoke('aipri-download-photo', url, filename, folderPath),
+
+  // Multi-account API
+  aipriGetAccounts: () => ipcRenderer.invoke('aipri-get-accounts'),
+  aipriAddAccount: (credentials) => ipcRenderer.invoke('aipri-add-account', credentials),
+  aipriRemoveAccount: (name) => ipcRenderer.invoke('aipri-remove-account', name),
+  aipriSwitchAccount: (name) => ipcRenderer.invoke('aipri-switch-account', name),
+
+  // Dialogs
+  showConfirmDialog: (options) => ipcRenderer.invoke('show-confirm-dialog', options),
 });

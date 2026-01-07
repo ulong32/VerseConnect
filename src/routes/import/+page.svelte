@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeftIcon, LogInIcon, LogOutIcon, AlertCircleIcon, CheckCircleIcon, LoaderIcon, DownloadIcon } from '@lucide/svelte';
+	import { ArrowLeftIcon, LogInIcon, LogOutIcon, AlertCircleIcon, CheckCircleIcon, LoaderIcon, DownloadIcon, XIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { 
@@ -8,6 +8,10 @@
 		login, 
 		logout
 	} from '$lib/stores/session.svelte';
+	import AccountSelector from '$lib/components/AccountSelector.svelte';
+
+	// UI state for add account form
+	let showAddForm = $state(false);
 
 	// Form state
 	let cardId = $state('');
@@ -294,11 +298,41 @@
 
 		await login(credentials);
 		isLoggingIn = false;
+		
+		// Close add form on successful login
+		if (sessionState.isLoggedIn) {
+			showAddForm = false;
+			resetForm();
+		}
+	}
+
+	// Reset form fields
+	function resetForm() {
+		cardId = '';
+		name = '';
+		birthdayM = '';
+		birthdayD = '';
+		cardIdError = '';
+		nameError = '';
+		birthdayMError = '';
+		birthdayDError = '';
+		cardIdTouched = false;
+		nameTouched = false;
+		birthdayMTouched = false;
+		birthdayDTouched = false;
 	}
 
 	// Logout handler
 	async function handleLogout() {
-		await logout();
+		const confirmed = await window.electronAPI.showConfirmDialog({
+			title: 'VerseConnect',
+			message: '全てのアカウントからログアウトします。\nこの操作を実行すると、保存されているすべてのセッション情報が削除されます。\n\n続行しますか？',
+			okLabel: 'ログアウト',
+			cancelLabel: 'キャンセル'
+		});
+		if (confirmed) {
+			await logout();
+		}
 	}
 
 	// Check session on mount
@@ -336,16 +370,11 @@
 						<h2 class="text-lg font-semibold text-white">ログイン済み</h2>
 					</div>
 
-					{#if sessionState.profileImageUrl}
-						<div class="flex flex-col items-center gap-4 mb-6">
-							<p class="text-gray-400 text-sm">プロフィール画像</p>
-							<img 
-								src={sessionState.profileImageUrl} 
-								alt="プロフィール" 
-								class="w-32 h-32 rounded-full object-cover border-4 border-purple-500/50 shadow-lg shadow-purple-500/20"
-							/>
-						</div>
-					{/if}
+					<!-- Account Selector -->
+					<div class="mb-6">
+						<p class="text-gray-400 text-sm mb-3">アカウント</p>
+						<AccountSelector onAddClick={() => showAddForm = true} />
+					</div>
 
 					<!-- Import Section -->
 					<div class="border-t border-white/10 pt-6 mt-6">
@@ -426,11 +455,148 @@
 							onclick={handleLogout}
 						>
 							<LogOutIcon class="w-5 h-5" />
-							ログアウト
+							全アカウントからログアウト
 						</button>
 					</div>
 				</div>
 			</section>
+
+			<!-- Add Account Modal Overlay -->
+			{#if showAddForm}
+				<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+					<div class="bg-[#1e1e2e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-white/10">
+						<div class="flex items-center justify-between mb-4">
+							<h2 class="text-lg font-semibold text-white flex items-center gap-2">
+								<LogInIcon class="w-5 h-5 text-purple-400" />
+								アカウントを追加
+							</h2>
+							<button
+								class="text-gray-400 hover:text-white transition-colors cursor-pointer"
+								onclick={() => { showAddForm = false; resetForm(); }}
+							>
+								<XIcon class="w-5 h-5" />
+							</button>
+						</div>
+
+						<div class="space-y-4">
+							<!-- Card ID -->
+							<div>
+								<label for="addCardId" class="block text-sm font-medium text-gray-300 mb-2">
+									カードID
+								</label>
+								<input
+									type="text"
+									id="addCardId"
+									class="w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors {cardIdTouched && cardIdError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
+									placeholder="00000000-0000000"
+									maxlength="16"
+									bind:value={cardId}
+									oninput={handleCardIdInput}
+									onblur={handleCardIdBlur}
+								/>
+								{#if cardIdTouched && cardIdError}
+									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
+										<AlertCircleIcon class="w-4 h-4" />
+										{cardIdError}
+									</p>
+								{/if}
+							</div>
+
+							<!-- Name -->
+							<div>
+								<label for="addName" class="block text-sm font-medium text-gray-300 mb-2">
+									名前
+								</label>
+								<input
+									type="text"
+									id="addName"
+									class="w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors {nameTouched && nameError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
+									placeholder="10文字まで"
+									maxlength="10"
+									bind:value={name}
+									onblur={handleNameBlur}
+								/>
+								{#if nameTouched && nameError}
+									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
+										<AlertCircleIcon class="w-4 h-4" />
+										{nameError}
+									</p>
+								{/if}
+							</div>
+
+							<!-- Birthday -->
+							<div>
+								<label for="addBirthdayM" class="block text-sm font-medium text-gray-300 mb-2">
+									誕生日
+								</label>
+								<div class="flex items-center gap-2">
+									<input
+										type="text"
+										id="addBirthdayM"
+										inputmode="numeric"
+										class="w-20 px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors text-center {birthdayMTouched && birthdayMError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
+										placeholder="01"
+										maxlength="2"
+										bind:value={birthdayM}
+										oninput={handleBirthdayMInput}
+										onblur={handleBirthdayMBlur}
+									/>
+									<span class="text-gray-400">月</span>
+									<input
+										type="text"
+										id="addBirthdayD"
+										inputmode="numeric"
+										class="w-20 px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors text-center {birthdayDTouched && birthdayDError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
+										placeholder="01"
+										maxlength="2"
+										bind:value={birthdayD}
+										oninput={handleBirthdayDInput}
+										onblur={handleBirthdayDBlur}
+									/>
+									<span class="text-gray-400">日</span>
+								</div>
+								{#if birthdayMTouched && birthdayMError}
+									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
+										<AlertCircleIcon class="w-4 h-4" />
+										{birthdayMError}
+									</p>
+								{/if}
+								{#if birthdayDTouched && birthdayDError}
+									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
+										<AlertCircleIcon class="w-4 h-4" />
+										{birthdayDError}
+									</p>
+								{/if}
+							</div>
+
+							<!-- Error message from server -->
+							{#if sessionState.error}
+								<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+									<p class="text-red-300 flex items-center gap-2">
+										<AlertCircleIcon class="w-5 h-5" />
+										{sessionState.error}
+									</p>
+								</div>
+							{/if}
+
+							<!-- Add button -->
+							<button
+								class="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+								onclick={handleLogin}
+								disabled={isLoggingIn}
+							>
+								{#if isLoggingIn}
+									<LoaderIcon class="w-5 h-5 animate-spin" />
+									ログイン中...
+								{:else}
+									<LogInIcon class="w-5 h-5" />
+									アカウントを追加
+								{/if}
+							</button>
+						</div>
+					</div>
+				</div>
+			{/if}
 		{:else}
 			<!-- Login form -->
 			<section class="mb-8">
@@ -493,6 +659,7 @@
 							<input
 								type="text"
 								id="birthdayM"
+								inputmode="numeric"
 								class="w-20 px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors text-center {birthdayMTouched && birthdayMError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
 								placeholder="01"
 								maxlength="2"
@@ -504,6 +671,7 @@
 							<input
 								type="text"
 								id="birthdayD"
+								inputmode="numeric"
 								class="w-20 px-3 py-2 bg-white/10 border rounded-lg text-white placeholder:text-gray-500 focus:outline-none transition-colors text-center {birthdayDTouched && birthdayDError ? 'border-red-500 focus:border-red-500' : 'border-white/20 focus:border-purple-500'}"
 								placeholder="01"
 								maxlength="2"

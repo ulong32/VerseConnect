@@ -86,6 +86,38 @@ declare global {
 		error?: string;
 	}
 
+	// Multi-account types
+	interface AipriAccount {
+		name: string;  // Unique key
+		cardId: string;
+		birthdayM: string;
+		birthdayD: string;
+		sessionCookie: string | null;
+		profileImagePath: string | null;  // Local path to cached profile image
+	}
+
+	interface AipriAccountsResult {
+		accounts: AipriAccount[];
+		activeAccountName: string | null;
+	}
+
+	interface AipriSwitchAccountResult {
+		success: boolean;
+		error?: string;
+		profileImageUrl?: string;
+		reloggedIn?: boolean;  // True if session was expired and re-login was performed
+	}
+
+	interface AipriAddAccountResult {
+		success: boolean;
+		error?: string;
+		profileImagePath?: string;
+	}
+
+	interface AipriRemoveAccountResult {
+		success: boolean;
+	}
+
 	interface ElectronAPI {
 		selectFolder: () => Promise<string | null>;
 		getImages: (folderPath: string) => Promise<ImageInfo[]>;
@@ -95,6 +127,7 @@ declare global {
 		setImageMetadata: (folderPath: string, imageName: string, metadata: ImageMetadata) => Promise<boolean>;
 		extractZip: (zipPath: string, targetFolder: string) => Promise<ZipExtractionResult>;
 		showItemInFolder: (filePath: string) => Promise<boolean>;
+		showConfirmDialog: (options: DialogOptions) => Promise<boolean>;
 		saveFriendCard: (folderPath: string, filename: string, base64Data: string) => Promise<FriendCardResult>;
 		// Aipri API
 		aipriLogin: (credentials: AipriLoginCredentials) => Promise<AipriLoginResult>;
@@ -102,6 +135,11 @@ declare global {
 		aipriClearSession: () => Promise<AipriClearSessionResult>;
 		aipriFetchPhotos: (targetYm: string) => Promise<AipriFetchPhotosResult>;
 		aipriDownloadPhoto: (url: string, filename: string, folderPath: string) => Promise<AipriDownloadResult>;
+		// Multi-account API
+		aipriGetAccounts: () => Promise<AipriAccountsResult>;
+		aipriAddAccount: (credentials: AipriLoginCredentials) => Promise<AipriAddAccountResult>;
+		aipriRemoveAccount: (name: string) => Promise<AipriRemoveAccountResult>;
+		aipriSwitchAccount: (name: string) => Promise<AipriSwitchAccountResult>;
 	}
 
 	namespace App {

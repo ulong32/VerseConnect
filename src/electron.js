@@ -12,8 +12,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // electron-storeはESMで動的インポート
-/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[], aipriSession: string | null}> | undefined} */
+/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountName: string | null}> | undefined} */
 let store;
+
+// Profile images directory
+let profileImagesDir = '';
+
 async function initStore() {
   const Store = (await import('electron-store')).default;
   // @ts-expect-error
@@ -22,9 +26,16 @@ async function initStore() {
       folderPath: '',
       customCharacters: [],
       customTags: [],
-      aipriSession: null
+      aipriAccounts: [],           // Array of AipriAccount
+      aipriActiveAccountName: null // Currently active account name
     }
   });
+
+  // Initialize profile images directory
+  profileImagesDir = path.join(app.getPath('userData'), 'profile_images');
+  if (!fs.existsSync(profileImagesDir)) {
+    fs.mkdirSync(profileImagesDir, { recursive: true });
+  }
 }
 
 // 画像ファイルの拡張子
@@ -433,11 +444,136 @@ function setupIpcHandlers() {
     return null;
   };
 
-  // Aipri Login Handler
-  ipcMain.handle('aipri-login', async (event, credentials) => {
+  /**
+   * Get active account's session cookie
+   * @returns {string | null}
+   */
+  const getActiveSessionCookie = () => {
+    const activeAccountName = store?.get('aipriActiveAccountName');
+    if (!activeAccountName) return null;
+
+    const accounts = store?.get('aipriAccounts') || [];
+    const activeAccount = accounts.find(acc => acc.name === activeAccountName);
+    return activeAccount?.sessionCookie || null;
+  };
+
+  /**
+   * Update active account's session cookie
+   * @param {string} sessionCookie
+   */
+  const updateActiveSessionCookie = (sessionCookie) => {
+    const activeAccountName = store?.get('aipriActiveAccountName');
+    if (!activeAccountName) return;
+
+    const accounts = store?.get('aipriAccounts') || [];
+    const updatedAccounts = accounts.map(acc =>
+      acc.name === activeAccountName
+        ? { ...acc, sessionCookie }
+        : acc
+    );
+    store?.set('aipriAccounts', updatedAccounts);
+  };
+
+  /**
+   * Clear all aipri.jp cookies and set new ones from cookie string
+   * This ensures net.fetch uses the correct account's session
+   * @param {string} cookieString
+   */
+  const setAipriSessionCookies = async (cookieString) => {
+    try {
+      // First clear existing cookies
+      const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
+      for (const cookie of existingCookies) {
+        await session.defaultSession.cookies.remove(AIPRI_BASE_URL, cookie.name);
+      }
+      const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+      for (const cookie of mypageCookies) {
+        await session.defaultSession.cookies.remove(`${AIPRI_BASE_URL}/mypage/`, cookie.name);
+      }
+
+      // Parse and set new cookies
+      if (cookieString) {
+        const cookies = cookieString.split(';').map(c => c.trim()).filter(c => c);
+        for (const cookie of cookies) {
+          const [name, ...valueParts] = cookie.split('=');
+          const value = valueParts.join('=');
+          if (name && value) {
+            // Set cookie for both paths
+            await session.defaultSession.cookies.set({
+              url: AIPRI_BASE_URL,
+              name: name.trim(),
+              value: value.trim(),
+              path: '/'
+            });
+            await session.defaultSession.cookies.set({
+              url: `${AIPRI_BASE_URL}/mypage/`,
+              name: name.trim(),
+              value: value.trim(),
+              path: '/mypage/'
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error setting aipri session cookies:', err);
+    }
+  };
+
+  /**
+   * Download and save profile image locally
+   * @param {string} imageUrl
+   * @param {string} accountName
+   * @param {string} [sessionCookie] - Optional session cookie for authenticated download
+   * @returns {Promise<string | null>}
+   */
+  const downloadAndSaveProfileImage = async (imageUrl, accountName, sessionCookie) => {
+    console.log('[Profile Image] Downloading for account:', accountName, 'URL:', imageUrl);
+    try {
+      // Set session cookies for this account
+      await setAipriSessionCookies(sessionCookie || '');
+
+      const response = await net.fetch(imageUrl, {
+        headers: { 'User-Agent': AIPRI_USER_AGENT }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to download profile image:', response.status);
+        return null;
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      // Sanitize account name for filename
+      const safeAccountName = accountName.replace(/[<>:"/\\|?*]/g, '_');
+      const filename = `${safeAccountName}.jpg`;
+      const filePath = path.join(profileImagesDir, filename);
+      console.log('[Profile Image] Saving to:', filePath, 'Buffer size:', buffer.length);
+      fs.writeFileSync(filePath, buffer);
+      return filePath;
+    } catch (error) {
+      console.error('Error downloading profile image:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Perform login and return cookies
+   * @param {{cardId: string, name: string, birthdayM: string, birthdayD: string}} credentials
+   * @returns {Promise<{success: boolean, cookies?: string, profileImageUrl?: string, error?: string}>}
+   */
+  const performLogin = async (credentials) => {
     const { cardId, name, birthdayM, birthdayD } = credentials;
 
     try {
+      // Clear existing aipri.jp cookies to prevent session contamination
+      const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
+      for (const cookie of existingCookies) {
+        await session.defaultSession.cookies.remove(AIPRI_BASE_URL, cookie.name);
+      }
+      const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+      for (const cookie of mypageCookies) {
+        await session.defaultSession.cookies.remove(`${AIPRI_BASE_URL}/mypage/`, cookie.name);
+      }
+
       // Build form data
       const formData = new URLSearchParams();
       formData.append('val[card_id]', cardId);
@@ -487,13 +623,7 @@ function setupIpcHandlers() {
         }
       }
 
-      // Store session cookies if present
-      if (cookies) {
-        store?.set('aipriSession', cookies);
-      }
-
       // Check the final URL to determine if login succeeded
-      // If we ended up at login page, login failed
       const finalUrl = response.url;
 
       if (!response.ok) {
@@ -507,41 +637,365 @@ function setupIpcHandlers() {
         return { success: false, error: 'ログインに失敗しました。入力情報を確認してください。' };
       }
 
-      // Extract profile image
-      const profileImage = extractProfileImage(html);
+      // Fetch mypage explicitly with the obtained cookies to get correct profile image
+      // This ensures we get profile image for THIS account, not a cached session
+      let profileImageUrl = null;
+      if (cookies) {
+        try {
+          console.log('[Profile Image] Fetching mypage with explicit cookies for:', name);
+          // Set session cookies for this account
+          await setAipriSessionCookies(cookies);
+
+          const mypageResponse = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
+            headers: {
+              'User-Agent': AIPRI_USER_AGENT
+            },
+            redirect: 'follow'
+          });
+
+          console.log('[Profile Image] Mypage response:', mypageResponse.status, 'Final URL:', mypageResponse.url);
+
+          if (mypageResponse.ok) {
+            const mypageHtml = await mypageResponse.text();
+            // Check if we got redirected to login page
+            if (mypageResponse.url.includes('/login')) {
+              console.log('[Profile Image] Redirected to login, falling back to login HTML');
+              profileImageUrl = extractProfileImage(html);
+            } else {
+              profileImageUrl = extractProfileImage(mypageHtml);
+            }
+            console.log('[Profile Image] Extracted URL:', profileImageUrl);
+          }
+        } catch (err) {
+          console.error('Error fetching mypage for profile image:', err);
+          // Fallback to login response HTML
+          profileImageUrl = extractProfileImage(html);
+        }
+      } else {
+        profileImageUrl = extractProfileImage(html);
+      }
 
       return {
         success: true,
-        profileImageUrl: profileImage,
-        redirectUrl: finalUrl
+        cookies: cookies || '',
+        profileImageUrl: profileImageUrl || undefined
       };
     } catch (error) {
       console.error('Aipri login error:', error);
       return { success: false, error: `通信エラー: ${String(error)}` };
     }
+  };
+
+  // ===== Multi-Account Handlers =====
+
+  // Get all accounts
+  ipcMain.handle('aipri-get-accounts', async () => {
+    const accounts = store?.get('aipriAccounts') || [];
+    const activeAccountName = store?.get('aipriActiveAccountName') || null;
+    return { accounts, activeAccountName };
   });
 
-  // Check if session is still valid
-  ipcMain.handle('aipri-check-session', async () => {
-    const sessionCookies = store?.get('aipriSession');
+  // Add new account (login + save)
+  ipcMain.handle('aipri-add-account', async (event, credentials) => {
+    const { name } = credentials;
 
+    // Check for duplicate name
+    const accounts = store?.get('aipriAccounts') || [];
+    if (accounts.some(acc => acc.name === name)) {
+      return { success: false, error: 'この名前のアカウントは既に登録されています' };
+    }
+
+    // Perform login
+    const loginResult = await performLogin(credentials);
+    if (!loginResult.success) {
+      return { success: false, error: loginResult.error };
+    }
+
+    // Download and save profile image
+    let profileImagePath = null;
+    if (loginResult.profileImageUrl) {
+      profileImagePath = await downloadAndSaveProfileImage(loginResult.profileImageUrl, name);
+    }
+
+    // Create account object
+    /** @type {{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}} */
+    const newAccount = {
+      name: credentials.name,
+      cardId: credentials.cardId,
+      birthdayM: credentials.birthdayM,
+      birthdayD: credentials.birthdayD,
+      sessionCookie: loginResult.cookies || null,
+      profileImagePath
+    };
+
+    // Add to accounts and set as active
+    const updatedAccounts = [...accounts, newAccount];
+    store?.set('aipriAccounts', updatedAccounts);
+    store?.set('aipriActiveAccountName', name);
+
+    return { success: true, profileImagePath };
+  });
+
+  // Remove account
+  ipcMain.handle('aipri-remove-account', async (event, name) => {
+    const accounts = store?.get('aipriAccounts') || [];
+    const activeAccountName = store?.get('aipriActiveAccountName');
+
+    // Find account to remove
+    const accountToRemove = accounts.find(acc => acc.name === name);
+    if (!accountToRemove) {
+      return { success: false };
+    }
+
+    // Delete profile image if exists
+    if (accountToRemove.profileImagePath && fs.existsSync(accountToRemove.profileImagePath)) {
+      try {
+        fs.unlinkSync(accountToRemove.profileImagePath);
+      } catch (err) {
+        console.error('Error deleting profile image:', err);
+      }
+    }
+
+    // Remove from accounts
+    const updatedAccounts = accounts.filter(acc => acc.name !== name);
+    store?.set('aipriAccounts', updatedAccounts);
+
+    // If removed account was active, switch to first remaining or null
+    if (activeAccountName === name) {
+      const newActive = updatedAccounts.length > 0 ? updatedAccounts[0].name : null;
+      store?.set('aipriActiveAccountName', newActive);
+    }
+
+    return { success: true };
+  });
+
+  // Switch active account
+  ipcMain.handle('aipri-switch-account', async (event, name) => {
+    const accounts = store?.get('aipriAccounts') || [];
+    const account = accounts.find(acc => acc.name === name);
+
+    if (!account) {
+      return { success: false, error: 'アカウントが見つかりません' };
+    }
+
+    // Set as active
+    store?.set('aipriActiveAccountName', name);
+
+    // Check if session is valid
+    if (!account.sessionCookie || !account.sessionCookie.includes('MYPAPSSID=')) {
+      // No session, try to re-login
+      const loginResult = await performLogin({
+        cardId: account.cardId,
+        name: account.name,
+        birthdayM: account.birthdayM,
+        birthdayD: account.birthdayD
+      });
+
+      if (!loginResult.success) {
+        return { success: false, error: loginResult.error };
+      }
+
+      // Update account with new session
+      let profileImagePath = account.profileImagePath;
+      if (loginResult.profileImageUrl) {
+        profileImagePath = await downloadAndSaveProfileImage(loginResult.profileImageUrl, name);
+      }
+
+      const updatedAccounts = accounts.map(acc =>
+        acc.name === name
+          ? { ...acc, sessionCookie: loginResult.cookies || null, profileImagePath }
+          : acc
+      );
+      store?.set('aipriAccounts', updatedAccounts);
+
+      return { success: true, reloggedIn: true, profileImageUrl: loginResult.profileImageUrl };
+    }
+
+    // Verify existing session
+    try {
+      // Set session cookies for this account
+      await setAipriSessionCookies(account.sessionCookie);
+
+      const response = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
+        headers: {
+          'User-Agent': AIPRI_USER_AGENT
+        },
+        redirect: 'follow'
+      });
+
+      const finalUrl = response.url;
+
+      if (finalUrl.includes('/mypage/login') || finalUrl.includes('/login')) {
+        // Session expired, try to re-login
+        const loginResult = await performLogin({
+          cardId: account.cardId,
+          name: account.name,
+          birthdayM: account.birthdayM,
+          birthdayD: account.birthdayD
+        });
+
+        if (!loginResult.success) {
+          return { success: false, error: loginResult.error };
+        }
+
+        // Update account with new session
+        let profileImagePath = account.profileImagePath;
+        if (loginResult.profileImageUrl) {
+          profileImagePath = await downloadAndSaveProfileImage(loginResult.profileImageUrl, name);
+        }
+
+        const updatedAccounts = accounts.map(acc =>
+          acc.name === name
+            ? { ...acc, sessionCookie: loginResult.cookies || null, profileImagePath }
+            : acc
+        );
+        store?.set('aipriAccounts', updatedAccounts);
+
+        return { success: true, reloggedIn: true, profileImageUrl: loginResult.profileImageUrl };
+      }
+
+      if (response.ok) {
+        const html = await response.text();
+        const profileImageUrl = extractProfileImage(html);
+
+        // Update profile image if we got a new one
+        // Use the account's session cookie for downloading, not the global session
+        if (profileImageUrl) {
+          const profileImagePath = await downloadAndSaveProfileImage(profileImageUrl, name, account.sessionCookie);
+          if (profileImagePath) {
+            const updatedAccounts = accounts.map(acc =>
+              acc.name === name ? { ...acc, profileImagePath } : acc
+            );
+            store?.set('aipriAccounts', updatedAccounts);
+          }
+        }
+
+        return { success: true, profileImageUrl };
+      }
+
+      return { success: false, error: `予期しないレスポンス (${response.status})` };
+    } catch (error) {
+      console.error('Switch account error:', error);
+      return { success: false, error: `通信エラー: ${String(error)}` };
+    }
+  });
+
+  // ===== Legacy Handlers (for backward compatibility) =====
+
+  // Aipri Login Handler (now adds account if new, switches if existing)
+  ipcMain.handle('aipri-login', async (event, credentials) => {
+    const { name } = credentials;
+    const accounts = store?.get('aipriAccounts') || [];
+
+    // Check if account already exists
+    const existingAccount = accounts.find(acc => acc.name === name);
+    if (existingAccount) {
+      // Account exists - switch to it (which will re-login if needed)
+      store?.set('aipriActiveAccountName', name);
+
+      // Check if session is still valid or re-login
+      if (!existingAccount.sessionCookie || !existingAccount.sessionCookie.includes('MYPAPSSID=')) {
+        // Re-login
+        const loginResult = await performLogin(credentials);
+        if (!loginResult.success) {
+          return { success: false, error: loginResult.error };
+        }
+
+        // Update account with new session
+        let profileImagePath = existingAccount.profileImagePath;
+        if (loginResult.profileImageUrl) {
+          profileImagePath = await downloadAndSaveProfileImage(loginResult.profileImageUrl, name);
+        }
+
+        const updatedAccounts = accounts.map(acc =>
+          acc.name === name
+            ? { ...acc, sessionCookie: loginResult.cookies || null, profileImagePath }
+            : acc
+        );
+        store?.set('aipriAccounts', updatedAccounts);
+
+        return {
+          success: true,
+          profileImageUrl: profileImagePath
+            ? `local-image://${encodeURIComponent(profileImagePath)}`
+            : loginResult.profileImageUrl
+        };
+      }
+
+      // Session exists, return existing profile image
+      return {
+        success: true,
+        profileImageUrl: existingAccount.profileImagePath
+          ? `local-image://${encodeURIComponent(existingAccount.profileImagePath)}`
+          : null
+      };
+    }
+
+    // New account - perform login and add
+    const loginResult = await performLogin(credentials);
+    if (!loginResult.success) {
+      return { success: false, error: loginResult.error };
+    }
+
+    // Download and save profile image
+    let profileImagePath = null;
+    if (loginResult.profileImageUrl) {
+      profileImagePath = await downloadAndSaveProfileImage(loginResult.profileImageUrl, name);
+    }
+
+    // Create account
+    /** @type {{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}} */
+    const newAccount = {
+      name: credentials.name,
+      cardId: credentials.cardId,
+      birthdayM: credentials.birthdayM,
+      birthdayD: credentials.birthdayD,
+      sessionCookie: loginResult.cookies || null,
+      profileImagePath
+    };
+
+    store?.set('aipriAccounts', [...accounts, newAccount]);
+    store?.set('aipriActiveAccountName', name);
+
+    return {
+      success: true,
+      profileImageUrl: profileImagePath
+        ? `local-image://${encodeURIComponent(profileImagePath)}`
+        : loginResult.profileImageUrl
+    };
+  });
+
+  // Check if session is still valid (uses active account)
+  ipcMain.handle('aipri-check-session', async () => {
+    const activeAccountName = store?.get('aipriActiveAccountName');
+    if (!activeAccountName) {
+      return { valid: false, reason: 'アクティブなアカウントがありません' };
+    }
+
+    const accounts = store?.get('aipriAccounts') || [];
+    const account = accounts.find(acc => acc.name === activeAccountName);
+    if (!account) {
+      return { valid: false, reason: 'アカウントが見つかりません' };
+    }
+
+    const sessionCookies = account.sessionCookie;
     if (!sessionCookies) {
       return { valid: false, reason: 'セッションがありません' };
     }
 
     // Check if MYPAPSSID cookie exists
-    const hasMYPAPSSID = sessionCookies.includes('MYPAPSSID=');
-    if (!hasMYPAPSSID) {
-      store?.set('aipriSession', null);
+    if (!sessionCookies.includes('MYPAPSSID=')) {
       return { valid: false, reason: 'セッションCookieが無効です' };
     }
 
     try {
+      // Set session cookies for this account
+      await setAipriSessionCookies(sessionCookies);
+
       // Try to access mypage to check if session is valid
       const response = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
         headers: {
-          'User-Agent': AIPRI_USER_AGENT,
-          'Cookie': sessionCookies
+          'User-Agent': AIPRI_USER_AGENT
         },
         redirect: 'follow'
       });
@@ -550,18 +1004,21 @@ function setupIpcHandlers() {
       const finalUrl = response.url;
 
       if (finalUrl.includes('/mypage/login') || finalUrl.includes('/login')) {
-        store?.set('aipriSession', null);
         return { valid: false, reason: 'セッションが期限切れです' };
       }
 
       if (response.ok) {
         const html = await response.text();
-        const profileImage = extractProfileImage(html);
-        return { valid: true, profileImageUrl: profileImage };
+        const profileImageUrl = extractProfileImage(html);
+
+        // Return local image path if available
+        const localImageUrl = account.profileImagePath
+          ? `local-image://${encodeURIComponent(account.profileImagePath)}`
+          : profileImageUrl;
+
+        return { valid: true, profileImageUrl: localImageUrl };
       }
 
-      // Unexpected response
-      store?.set('aipriSession', null);
       return { valid: false, reason: `予期しないレスポンス (${response.status})` };
     } catch (error) {
       console.error('Session check error:', error);
@@ -569,21 +1026,37 @@ function setupIpcHandlers() {
     }
   });
 
-  // Clear session
+  // Clear session (clears all accounts)
   ipcMain.handle('aipri-clear-session', async () => {
-    store?.set('aipriSession', null);
+    // Delete all profile images
+    const accounts = store?.get('aipriAccounts') || [];
+    for (const account of accounts) {
+      if (account.profileImagePath && fs.existsSync(account.profileImagePath)) {
+        try {
+          fs.unlinkSync(account.profileImagePath);
+        } catch (err) {
+          console.error('Error deleting profile image:', err);
+        }
+      }
+    }
+
+    store?.set('aipriAccounts', []);
+    store?.set('aipriActiveAccountName', null);
     return { success: true };
   });
 
-  // Fetch photos from myphoto-list API
+  // Fetch photos from myphoto-list API (uses active account)
   ipcMain.handle('aipri-fetch-photos', async (event, targetYm) => {
-    const sessionCookies = store?.get('aipriSession');
+    const sessionCookies = getActiveSessionCookie();
 
     if (!sessionCookies) {
       return { success: false, error: 'セッションがありません。ログインしてください。' };
     }
 
     try {
+      // Set session cookies for this account
+      await setAipriSessionCookies(sessionCookies);
+
       const formData = new URLSearchParams();
       formData.append('target_ym', targetYm);
       formData.append('data_count', '999');
@@ -593,8 +1066,7 @@ function setupIpcHandlers() {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           'X-Requested-With': 'XMLHttpRequest',
-          'User-Agent': AIPRI_USER_AGENT,
-          'Cookie': sessionCookies
+          'User-Agent': AIPRI_USER_AGENT
         },
         body: formData.toString()
       });
@@ -632,11 +1104,15 @@ function setupIpcHandlers() {
       return { success: true, skipped: true };
     }
 
+    // Get active account's session cookie
+    const sessionCookies = getActiveSessionCookie();
+
     try {
+      // Set session cookies for this account
+      await setAipriSessionCookies(sessionCookies || '');
+
       const response = await net.fetch(url, {
-        headers: {
-          'User-Agent': AIPRI_USER_AGENT
-        }
+        headers: { 'User-Agent': AIPRI_USER_AGENT }
       });
 
       if (!response.ok) {
@@ -651,6 +1127,24 @@ function setupIpcHandlers() {
       console.error('Download photo error:', error);
       return { success: false, error: `ダウンロードエラー: ${String(error)}` };
     }
+  });
+
+  // Show confirmation dialog
+  ipcMain.handle('show-confirm-dialog', async (event, options) => {
+    const { title, message, okLabel, cancelLabel } = options;
+    const dialogOptions = {
+      type: /** @type {const} */ ('warning'),
+      title: title || '確認',
+      message: message || '',
+      buttons: [cancelLabel || 'キャンセル', okLabel || 'OK'],
+      defaultId: 0,
+      cancelId: 0
+    };
+    const result = mainWindow
+      ? dialog.showMessageBoxSync(mainWindow, dialogOptions)
+      : dialog.showMessageBoxSync(dialogOptions);
+    // Returns 0 for cancel (first button), 1 for ok (second button)
+    return result === 1;
   });
 }
 
@@ -670,7 +1164,10 @@ protocol.registerSchemesAsPrivileged([
 app.once('ready', async () => {
   // カスタムプロトコルハンドラーを登録
   protocol.handle('local-image', (request) => {
-    const filePath = decodeURIComponent(request.url.replace('local-image://', ''));
+    // Strip query parameters and decode file path
+    const urlWithoutProtocol = request.url.replace('local-image://', '');
+    const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
+    const filePath = decodeURIComponent(urlWithoutQuery);
     return net.fetch(pathToFileURL(filePath).toString());
   });
 
