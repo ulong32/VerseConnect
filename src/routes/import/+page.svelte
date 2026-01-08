@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { ArrowLeftIcon, LogInIcon, LogOutIcon, CircleAlertIcon, LoaderIcon, DownloadIcon, XIcon, CircleCheckBigIcon } from '@lucide/svelte';
-	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { 
-		sessionState, 
-		checkSession, 
-		login, 
-		logout
-	} from '$lib/stores/session.svelte';
 	import AccountSelector from '$lib/components/AccountSelector.svelte';
+	import {
+	  checkSession,
+	  login,
+	  logout,
+	  sessionState
+	} from '$lib/stores/session.svelte';
+	import { ArrowLeftIcon, CircleAlertIcon, CircleCheckBigIcon, DownloadIcon, LoaderIcon, LogInIcon, LogOutIcon, XIcon } from '@lucide/svelte';
+	import { Progress } from '@skeletonlabs/skeleton-svelte';
+	import { onMount } from 'svelte';
 
 	// UI state for add account form
 	let showAddForm = $state(false);
@@ -182,7 +182,7 @@
 		if (!value) return '日を入力してください';
 		const day = parseInt(value, 10);
 		const m = parseInt(month, 10);
-		
+
 		if (isNaN(day) || day < 1) {
 			return '有効な日を入力してください';
 		}
@@ -271,9 +271,9 @@
 
 	// Check if form is valid
 	function isFormValid(): boolean {
-		return !validateCardId(cardId) && 
-			   !validateName(name) && 
-			   !validateBirthdayM(birthdayM) && 
+		return !validateCardId(cardId) &&
+			   !validateName(name) &&
+			   !validateBirthdayM(birthdayM) &&
 			   !validateBirthdayD(birthdayD, birthdayM);
 	}
 
@@ -289,7 +289,7 @@
 		if (!isFormValid()) return;
 
 		isLoggingIn = true;
-		
+
 		const credentials: AipriLoginCredentials = {
 			cardId,
 			name,
@@ -299,7 +299,7 @@
 
 		await login(credentials);
 		isLoggingIn = false;
-		
+
 		// Close add form on successful login
 		if (sessionState.isLoggedIn) {
 			showAddForm = false;
@@ -346,7 +346,7 @@
 	});
 </script>
 
-<div class="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6">
+<div class="bg-linear-to-br from-[#1a1a2e] to-[#16213e] p-6">
 	<div class="max-w-2xl mx-auto">
 		<!-- Header -->
 		<div class="flex items-center align-center gap-4 mb-8">
@@ -403,7 +403,7 @@
 
 						<!-- Import Button -->
 						<button
-							class="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2 mb-4"
+							class="w-full px-4 py-3 bg-linear-to-r from-emerald-500 to-teal-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2 mb-4"
 							onclick={handleImport}
 							disabled={isImporting || !selectedYm}
 						>
@@ -427,7 +427,7 @@
 										{/if}
 									</div>
 									<Progress.Track class="bg-white/20 h-2 rounded-full overflow-hidden">
-										<Progress.Range class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full transition-all duration-300" />
+										<Progress.Range class="bg-linear-to-r from-emerald-400 to-teal-500 h-full transition-all duration-300" />
 									</Progress.Track>
 								</Progress>
 							</div>
@@ -451,7 +451,7 @@
 					<!-- Logout Button -->
 					<div class="border-t border-white/10 pt-6 mt-6">
 						<button
-							class="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 flex items-center justify-center gap-2"
+							class="w-full px-4 py-3 bg-linear-to-r from-red-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 flex items-center justify-center gap-2"
 							onclick={handleLogout}
 						>
 							<LogOutIcon class="size-5" />
@@ -581,7 +581,7 @@
 
 							<!-- Add button -->
 							<button
-								class="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+								class="w-full px-4 py-3 bg-linear-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
 								onclick={handleLogin}
 								disabled={isLoggingIn}
 							>
@@ -707,7 +707,7 @@
 
 					<!-- Login button -->
 					<button
-						class="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+						class="w-full px-4 py-3 bg-linear-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
 						onclick={handleLogin}
 						disabled={isLoggingIn}
 					>

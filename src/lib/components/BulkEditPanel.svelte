@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Progress } from '@skeletonlabs/skeleton-svelte';
-	import { SquareCheckIcon, XIcon, PlusIcon } from '@lucide/svelte';
 	import { addCustomCharacter } from '$lib/stores/settings.svelte';
-	
+	import { PlusIcon, SquareCheckIcon, XIcon } from '@lucide/svelte';
+	import { Progress } from '@skeletonlabs/skeleton-svelte';
+
 	interface Props {
 		selectedCount: number;
 		characters: string[];
@@ -13,7 +13,7 @@
 	}
 
 	let { selectedCount, characters, isApplying, progress, oncancel, onapply }: Props = $props();
-	
+
 	let selectedCharacters: string[] = $state([]);
 	let newCharacterInput = $state('');
 	let overwriteMode = $state(false);
@@ -31,7 +31,7 @@
 		if (isApplying) return;
 		const trimmed = newCharacterInput.trim();
 		if (!trimmed) return;
-		
+
 		const success = await addCustomCharacter(trimmed);
 		if (success) {
 			// Also select the newly added character
@@ -56,7 +56,7 @@
 				<span class="font-medium">{selectedCount}件選択中</span>
 			</div>
 			{#if !isApplying}
-				<button 
+				<button
 					class="p-1 hover:bg-white/10 rounded transition-colors"
 					onclick={oncancel}
 					aria-label="選択モード終了"
@@ -65,7 +65,7 @@
 				</button>
 			{/if}
 		</div>
-		
+
 		{#if isApplying}
 			<!-- Progress indicator -->
 			<div class="mb-3">
@@ -83,8 +83,8 @@
 				<div class="flex flex-wrap gap-1.5 mb-2">
 					{#each characters as char}
 						<button
-							class="px-2.5 py-1 rounded-full text-xs transition-all {selectedCharacters.includes(char) 
-								? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' 
+							class="px-2.5 py-1 rounded-full text-xs transition-all {selectedCharacters.includes(char)
+								? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
 								: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
 							onclick={() => toggleCharacter(char)}
 						>
@@ -94,14 +94,14 @@
 				</div>
 				<!-- Custom character input -->
 				<div class="flex gap-2 items-center">
-					<input 
-						type="text" 
+					<input
+						type="text"
 						bind:value={newCharacterInput}
 						placeholder="新しいタグを追加..."
 						class="flex-1 max-w-xs px-3 py-1.5 text-sm bg-white/10 text-white rounded-lg border border-white/10 focus:border-purple-500 focus:outline-none"
 						onkeydown={(e) => e.key === 'Enter' && handleAddCharacter()}
 					/>
-					<button 
+					<button
 						class="px-3 py-1.5 bg-purple-600/50 hover:bg-purple-600 text-white rounded-lg transition-colors flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
 						onclick={handleAddCharacter}
 						disabled={!newCharacterInput.trim()}
@@ -111,19 +111,19 @@
 					</button>
 				</div>
 			</div>
-			
+
 			<div class="flex gap-2 items-center">
-				<button 
+				<button
 					class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
 					onclick={oncancel}
 				>
 					キャンセル
 				</button>
-				
+
 				<!-- Overwrite mode toggle -->
 				<label class="flex items-center gap-2 cursor-pointer">
-					<input 
-						type="checkbox" 
+					<input
+						type="checkbox"
 						bind:checked={overwriteMode}
 						class="size-4 accent-orange-500"
 					/>
@@ -131,8 +131,8 @@
 						上書き
 					</span>
 				</label>
-				
-				<button 
+
+				<button
 					class="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed {overwriteMode ? 'bg-orange-600 hover:bg-orange-500' : 'bg-purple-600 hover:bg-purple-500'}"
 					onclick={handleApply}
 					disabled={selectedCharacters.length === 0}

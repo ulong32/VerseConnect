@@ -1,7 +1,7 @@
 import { net, session } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { getStore, getProfileImagesDir } from '../store.js';
+import { getProfileImagesDir, getStore } from '../store.js';
 
 const AIPRI_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const AIPRI_BASE_URL = 'https://aipri.jp';

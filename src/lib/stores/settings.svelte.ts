@@ -97,4 +97,3 @@ export async function removeCustomTag(name: string): Promise<void> {
     await window.electronAPI.setSettings({ customTags: $state.snapshot(settingsState.customTags) });
   }
 }
-

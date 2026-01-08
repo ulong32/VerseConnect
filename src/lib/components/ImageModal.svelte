@@ -1,9 +1,7 @@
 <script lang="ts">
-	import MetadataEditor from './MetadataEditor.svelte';
+	import { ArrowLeftIcon, ArrowLeftRightIcon, ArrowRightIcon, EyeIcon, EyeOffIcon, FolderOpenIcon, PenIcon, TagIcon, XIcon } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
-	import { tweened } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
-	import { FolderOpenIcon, ArrowLeftRightIcon, PenIcon, XIcon, ArrowLeftIcon, ArrowRightIcon, TagIcon, EyeIcon, EyeOffIcon } from '@lucide/svelte';
+	import MetadataEditor from './MetadataEditor.svelte';
 
 	interface Props {
 		selectedImage: ImageInfo;
@@ -31,7 +29,7 @@
 		onselectfriendcard: (file: File) => void;
 	}
 
-	let { 
+	let {
 		selectedImage,
 		currentMetadata,
 		allCharacters,
@@ -93,27 +91,27 @@
 </script>
 
 
-<div 
+<div
 	class="fixed inset-0 bg-black/95 flex items-start justify-center z-40 animate-fade-in overflow-y-auto py-8"
-	onclick={onclose} 
-	onkeydown={(e) => e.key === 'Escape' && onclose()} 
-	role="dialog" 
-	aria-modal="true" 
+	onclick={onclose}
+	onkeydown={(e) => e.key === 'Escape' && onclose()}
+	role="dialog"
+	aria-modal="true"
 	aria-label="画像ビューア"
 	tabindex="-1"
 >
 
 	<div
-		class="relative max-w-[95vw] flex flex-col items-center my-auto" 
+		class="relative max-w-[95vw] flex flex-col items-center my-auto"
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.stopPropagation()}
 		role="presentation"
 		aria-label="画像コンテンツ"
 	>
 		<img class="max-w-11/12 max-h-screen object-contain rounded-lg" src={displayUrl} alt={selectedImage.name} />
-		
+
 		{#if showUI}
-			<div 
+			<div
 				class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur rounded-lg transition-colors overflow-hidden w-fit"
 			>
 				<div class="w-max mx-auto flex flex-col items-center p-2">
@@ -157,7 +155,7 @@
 							</button>
 						{/if}
 					</div>
-					
+
 					{#if showFriendCard}
 						<div class="mt-1 text-purple-400 text-xs">フレンドカード表示中</div>
 					{/if}
@@ -200,7 +198,7 @@
 
 			<!-- Navigation buttons -->
 			{#if selectedIndex > 0}
-				<button 
+				<button
 					class="fixed left-6 top-1/2 -translate-y-1/2 p-2 bg-gray-500/30 hover:bg-gray-500/20 text-white rounded-full backdrop-blur transition-all"
 					onclick={onprev}
 				>
@@ -208,22 +206,22 @@
 				</button>
 			{/if}
 			{#if selectedIndex < totalImages - 1}
-				<button 
+				<button
 					class="fixed right-6 top-1/2 -translate-y-1/2 p-2 bg-gray-500/30 hover:bg-gray-500/20 text-white rounded-full backdrop-blur transition-all"
 					onclick={onnext}
 				>
 					<ArrowRightIcon class="size-6" />
 				</button>
 			{/if}
-			
+
 			<!-- Close button -->
-			<button 
+			<button
 				class="fixed top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur transition-all"
 				onclick={onclose}
 			>
 				<XIcon class="size-6" />
 			</button>
-			
+
 			<!-- Image counter -->
 			<div class="fixed top-6 left-6 px-3 py-1 bg-black/50 text-white text-sm rounded-full backdrop-blur">
 				{selectedIndex + 1} / {totalImages}
@@ -231,7 +229,7 @@
 		{/if}
 
 		<!-- UI Toggle Button -->
-		<button 
+		<button
 			class="fixed bottom-6 right-6 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur transition-all z-50 group"
 			onclick={toggleUI}
 			title={showUI ? "UIを非表示" : "UIを表示"}

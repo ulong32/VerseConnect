@@ -1,9 +1,9 @@
 <script lang="ts">
-	import './layout.css';
-	import faviconPng from '$lib/assets/favicon.png';
-	import { SettingsIcon, DownloadIcon, CopyrightIcon, MinusIcon, SquareIcon, XIcon, ArrowUpIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
-	import { Portal, Tooltip, Avatar } from '@skeletonlabs/skeleton-svelte';
+	import faviconPng from '$lib/assets/favicon.png';
+	import { ArrowUpIcon, CopyrightIcon, DownloadIcon, MinusIcon, SettingsIcon, SquareIcon, XIcon } from '@lucide/svelte';
+	import { Avatar, Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
+	import './layout.css';
 	import LuminaPng from './lumina.png';
 	let { children } = $props();
 

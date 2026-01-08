@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import fs from 'fs';
-import { getStore } from '../store.js';
 import * as aipriService from '../services/aipriService.js';
+import { getStore } from '../store.js';
 
 export function setupAipriHandlers() {
   // ===== Multi-Account Handlers =====

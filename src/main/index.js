@@ -1,11 +1,10 @@
-import { app, protocol, net, ipcMain } from 'electron';
+import { app, ipcMain, net, protocol } from 'electron';
 import serve from 'electron-serve';
-import path from 'path';
 import { pathToFileURL } from 'url';
-import { initStore } from './store.js';
 import { setupAipriHandlers } from './handlers/aipriHandlers.js';
-import { setupFileHandlers } from './handlers/fileHandlers.js';
 import { setupAppHandlers } from './handlers/appHandlers.js';
+import { setupFileHandlers } from './handlers/fileHandlers.js';
+import { initStore } from './store.js';
 import { createWindow, getMainWindow } from './windowManager.js';
 
 const serveURL = serve({ directory: '.' });
@@ -59,7 +58,7 @@ app.once('ready', async () => {
   await initStore();
 
   // Setup IPC Handlers
-  setupFileHandlers(getMainWindow);
+  setupFileHandlers();
   setupAipriHandlers();
   setupAppHandlers(getMainWindow);
 

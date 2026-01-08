@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { CheckIcon, PlusIcon, PencilIcon, XIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
 	import { Avatar } from '@skeletonlabs/skeleton-svelte';
-	import { 
-		sessionState, 
-		switchAccount, 
-		removeAccount, 
-		toggleEditMode 
+	import {
+		sessionState,
+		switchAccount,
+		removeAccount,
+		toggleEditMode
 	} from '$lib/stores/session.svelte';
 
 	interface Props {
@@ -13,13 +13,13 @@
 	}
 
 	let { onAddClick }: Props = $props();
-	
+
 	let isSwitching = $state<string | null>(null);
 
 	async function handleAccountClick(name: string) {
 		if (sessionState.isEditMode) return;
 		if (name === sessionState.activeAccountName) return;
-		
+
 		isSwitching = name;
 		await switchAccount(name);
 		isSwitching = null;
@@ -34,7 +34,7 @@
 			}
 		}
 		await removeAccount(name);
-		
+
 		// Exit edit mode if no accounts left
 		if (sessionState.accounts.length === 0) {
 			sessionState.isEditMode = false;
@@ -70,10 +70,10 @@
       >
         <!-- Profile image or default avatar -->
         <Avatar class="size-12 overflow-hidden bg-white/10 border-2 border-white/20 hover:border-purple-400 transition-colors">
-          <Avatar.Image 
-            src={getProfileImageUrl(account) || ''} 
-            alt={account.name} 
-            class="size-full object-cover" 
+          <Avatar.Image
+            src={getProfileImageUrl(account) || ''}
+            alt={account.name}
+            class="size-full object-cover"
           />
           <Avatar.Fallback class="size-full flex items-center justify-center">
             <UserIcon class="size-6 text-gray-400" />
@@ -112,7 +112,7 @@
 	{/each}
 
 	<!-- Spacer -->
-	<div class="flex-grow"></div>
+	<div class="grow"></div>
 
 	<!-- Edit mode toggle button -->
 	{#if sessionState.accounts.length > 0}
@@ -133,7 +133,7 @@
       </button>
       <div class="text-xs text-gray-400 w-full my-2 text-center">編集</div>
     </div>
-    
+
 	{/if}
 
 	<!-- Add account button -->

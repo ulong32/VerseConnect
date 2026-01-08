@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SearchIcon, TagIcon, UserRoundIcon, ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, SquareCheckIcon, UsersIcon, UserXIcon, CircleSlash2Icon, EqualIcon, ShirtIcon } from '@lucide/svelte';
+	import { ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, CircleSlash2Icon, EqualIcon, SearchIcon, ShirtIcon, SquareCheckIcon, TagIcon, UserRoundIcon, UsersIcon, UserXIcon } from '@lucide/svelte';
 	interface Props {
 		characters: string[];
 		selectedCharacters: string[];

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CalendarIcon, HashIcon, FolderClosedIcon, ShirtIcon, UserRoundIcon, ImageIcon, TagIcon } from '@lucide/svelte';
+	import { CalendarIcon, FolderClosedIcon, HashIcon, ImageIcon, ShirtIcon, TagIcon, UserRoundIcon } from '@lucide/svelte';
 	interface Props {
 		image: ImageInfo;
 		onclick: () => void;

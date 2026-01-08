@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { CheckIcon, RotateCcwIcon, EyeIcon, EyeOffIcon } from '@lucide/svelte';
-	import SearchPanel from '$lib/components/SearchPanel.svelte';
-	import ImageTile from '$lib/components/ImageTile.svelte';
-	import ImageModal from '$lib/components/ImageModal.svelte';
 	import BulkEditPanel from '$lib/components/BulkEditPanel.svelte';
+	import ImageModal from '$lib/components/ImageModal.svelte';
+	import ImageTile from '$lib/components/ImageTile.svelte';
+	import SearchPanel from '$lib/components/SearchPanel.svelte';
 	import {
-		settingsState,
-		getAllCharacters,
-		getAllTags,
-		loadSettings,
-		addCustomCharacter,
-		addCustomTag
+	  addCustomCharacter,
+	  addCustomTag,
+	  getAllCharacters,
+	  getAllTags,
+	  loadSettings,
+	  settingsState
 	} from '$lib/stores/settings.svelte';
+	import { CheckIcon, EyeIcon, EyeOffIcon, RotateCcwIcon } from '@lucide/svelte';
+	import { onMount } from 'svelte';
 
 	// State
 	let images: ImageInfo[] = $state([]);

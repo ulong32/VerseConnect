@@ -1,18 +1,16 @@
 <script lang="ts">
-	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, UserPlusIcon, XIcon, UsersIcon, RotateCcwIcon, TagIcon, PlusIcon } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
-	import { 
-		settingsState, 
-		CHARACTER_PRESETS,
-		getAllCharacters,
-		getAllTags,
-		selectFolder,
-		addCustomCharacter,
-		removeCustomCharacter,
-		addCustomTag,
-		removeCustomTag,
-		loadSettings
+	import {
+	  addCustomCharacter,
+	  addCustomTag,
+	  CHARACTER_PRESETS,
+	  loadSettings,
+	  removeCustomCharacter,
+	  removeCustomTag,
+	  selectFolder,
+	  settingsState
 	} from '$lib/stores/settings.svelte';
+	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, PlusIcon, TagIcon, UserPlusIcon, UsersIcon, XIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let newCharacterInput = $state('');
@@ -70,7 +68,7 @@
 	}
 </script>
 
-<div class="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6">
+<div class="bg-linear-to-br from-[#1a1a2e] to-[#16213e] p-6">
 	<div class="max-w-2xl mx-auto">
 		<!-- Header -->
 		<div class="flex items-center align-center gap-4 mb-8">
@@ -93,8 +91,8 @@
 				</h2>
 				<div class="bg-white/5 rounded-xl p-4 backdrop-blur-sm">
 					<div class="flex items-center gap-3">
-						<button 
-							class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all whitespace-nowrap hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40"
+						<button
+							class="px-4 py-2 bg-linear-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all whitespace-nowrap hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40"
 							onclick={handleSelectFolder}
 							onmouseenter={() => isHovered = true}
 							onmouseleave={() => isHovered = false}
@@ -141,10 +139,10 @@
 				<!-- Custom Characters -->
 				<div class="bg-white/5 rounded-xl p-4 backdrop-blur-sm">
 					<h3 class="text-sm font-medium text-gray-400 mb-3">カスタムキャラクター</h3>
-					
+
 					<!-- Add new character -->
 					<div class="flex gap-2 mb-4">
-						<input 
+						<input
 							type="text"
 							class="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
 							placeholder="新しいキャラクター名"
@@ -152,7 +150,7 @@
 							onkeydown={handleKeydown}
 						/>
 						<button
-							class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+							class="px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
 							onclick={handleAddCharacter}
 							disabled={!newCharacterInput.trim()}
 						>
@@ -194,10 +192,10 @@
 
 				<div class="bg-white/5 rounded-xl p-4 backdrop-blur-sm">
 					<h3 class="text-sm font-medium text-gray-400 mb-3">カスタムタグ</h3>
-					
+
 					<!-- Add new tag -->
 					<div class="flex gap-2 mb-4">
-						<input 
+						<input
 							type="text"
 							class="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-teal-500 transition-colors"
 							placeholder="新しいタグ名"
@@ -205,7 +203,7 @@
 							onkeydown={handleTagKeydown}
 						/>
 						<button
-							class="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+							class="px-4 py-2 bg-linear-to-r from-teal-500 to-cyan-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
 							onclick={handleAddTag}
 							disabled={!newTagInput.trim()}
 						>

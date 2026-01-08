@@ -1,7 +1,7 @@
 import { ipcMain, shell } from 'electron';
 import * as fileService from '../services/fileService.js';
 
-export function setupFileHandlers(mainWindow) {
+export function setupFileHandlers() {
   // フォルダ内の画像ファイル一覧を再帰的に取得（メタデータ付き）
   ipcMain.handle('get-images', async (event, folderPath) => {
     return fileService.scanFolder(folderPath);

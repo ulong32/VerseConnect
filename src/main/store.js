@@ -1,6 +1,6 @@
 import { app } from 'electron';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
 /** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountName: string | null}> | undefined} */
 let store;

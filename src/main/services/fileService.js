@@ -1,7 +1,6 @@
+import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
-import AdmZip from 'adm-zip';
-import { fileURLToPath } from 'url';
 
 // 画像ファイルの拡張子
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico'];
@@ -34,7 +33,8 @@ export const parseFilename = (filename) => {
 
 /**
  * メタデータファイルのパスを取得
- * @param {string} folderPath 
+ * @param {string} folderPath
+ * @returns {string}
  */
 const getMetadataFilePath = (folderPath) => {
   return path.join(folderPath, '.image_metadata.json');
@@ -42,7 +42,8 @@ const getMetadataFilePath = (folderPath) => {
 
 /**
  * フォルダ内の全メタデータを読み込む
- * @param {string} folderPath 
+ * @param {string} folderPath
+ * @returns {Record<string, unknown>}
  */
 export const loadFolderMetadata = (folderPath) => {
   const metadataPath = getMetadataFilePath(folderPath);
@@ -60,7 +61,8 @@ export const loadFolderMetadata = (folderPath) => {
 /**
  * フォルダ内の全メタデータを保存
  * @param {string} folderPath
- * @param {Object} metadata
+ * @param {Record<string, unknown>} metadata
+ * @returns {boolean}
  */
 export const saveFolderMetadata = (folderPath, metadata) => {
   const metadataPath = getMetadataFilePath(folderPath);
@@ -83,8 +85,9 @@ export const scanFolder = (folderPath) => {
     return [];
   }
 
+  /** @param {string} currentPath @param {string} relativePath */
   const scan = (currentPath, relativePath = '') => {
-    /** @type {Array<any>} */
+    /** @type {Array<{name: string, path: string, url: string, metadata: object|null, folder: string, extractedDate: string|null, serial: number|null}>} */
     const images = [];
 
     try {
@@ -133,6 +136,12 @@ export const scanFolder = (folderPath) => {
   }
 };
 
+/**
+ * ZIPファイルを展開して画像を抽出
+ * @param {string} zipPath
+ * @param {string} targetFolder
+ * @returns {{ success: boolean, error?: string, extracted: number }}
+ */
 export const extractZip = (zipPath, targetFolder) => {
   if (!zipPath || !targetFolder) {
     return { success: false, error: 'Invalid parameters', extracted: 0 };
@@ -182,6 +191,13 @@ export const extractZip = (zipPath, targetFolder) => {
   }
 };
 
+/**
+ * フレンドカードを保存
+ * @param {string} folderPath
+ * @param {string} filename
+ * @param {string} base64Data
+ * @returns {{ success: boolean, error?: string, filename?: string }}
+ */
 export const saveFriendCard = (folderPath, filename, base64Data) => {
   if (!folderPath || !filename || !base64Data) {
     return { success: false, error: 'Invalid parameters' };
