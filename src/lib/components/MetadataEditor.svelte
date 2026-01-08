@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ImageIcon, TagIcon } from '@lucide/svelte';
-	
+
 	interface Props {
 		allCharacters: string[];
 		allTags: string[];
@@ -18,17 +18,17 @@
 		onselectfriendcard: (file: File) => void;
 	}
 
-	let { 
-		allCharacters, 
+	let {
+		allCharacters,
 		allTags,
-		currentMetadata, 
+		currentMetadata,
 		newCharacterInput,
 		newTagInput,
-		ontogglecharacter, 
+		ontogglecharacter,
 		ontoggletag,
-		onaddcharacter, 
+		onaddcharacter,
 		onaddtag,
-		onupdateitem, 
+		onupdateitem,
 		onsave,
 		oninputchange,
 		ontaginputchange,
@@ -51,8 +51,8 @@
 		<div class="flex flex-wrap gap-2">
 			{#each allCharacters as char}
 				<button
-					class="px-3 py-1.5 rounded-full text-sm transition-all {currentMetadata.characters.includes(char) 
-						? 'bg-purple-600 text-white' 
+					class="px-3 py-1.5 rounded-full text-sm transition-all {currentMetadata.characters.includes(char)
+						? 'bg-purple-600 text-white'
 						: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
 					onclick={() => ontogglecharacter(char)}
 				>
@@ -81,16 +81,16 @@
 
 	<!-- Tag Selection -->
 	<div class="mb-4">
-		<span class="block text-white text-sm font-medium mb-2 flex items-center gap-1">
-			<TagIcon class="w-4 h-4" />
+		<span class="text-white text-sm font-medium mb-2 flex items-center gap-1">
+			<TagIcon class="size-4" />
 			タグ
 		</span>
 		{#if allTags.length > 0}
 			<div class="flex flex-wrap gap-2 mb-3">
 				{#each allTags as tag}
 					<button
-						class="px-3 py-1.5 rounded-full text-sm transition-all {(currentMetadata.tags || []).includes(tag) 
-							? 'bg-teal-600 text-white' 
+						class="px-3 py-1.5 rounded-full text-sm transition-all {(currentMetadata.tags || []).includes(tag)
+							? 'bg-teal-600 text-white'
 							: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
 						onclick={() => ontoggletag(tag)}
 					>
@@ -135,7 +135,7 @@
 		<span class="block text-white text-sm font-medium mb-2">フレンドカード</span>
 		<div class="flex items-center gap-2">
 			<label class="flex-1 flex items-center gap-2 px-3 py-2 bg-white/10 text-gray-300 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-colors">
-				<ImageIcon class="w-4 h-4" />
+				<ImageIcon class="size-4" />
 				<span class="text-sm truncate">
 					{currentMetadata.friend_card || 'ファイルを選択...'}
 				</span>
@@ -154,7 +154,7 @@
 
 	<!-- Save Button -->
 	<button
-		class="w-full py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all"
+		class="w-full py-2 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all"
 		onclick={onsave}
 	>
 		保存

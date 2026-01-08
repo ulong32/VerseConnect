@@ -359,7 +359,7 @@
 		{#if sessionState.isChecking}
 			<!-- Loading state -->
 			<div class="flex items-center justify-center h-48">
-				<LoaderIcon class="w-8 h-8 text-purple-400 animate-spin" />
+				<LoaderIcon class="size-8 text-purple-400 animate-spin" />
 				<span class="ml-3 text-gray-400">セッションを確認中...</span>
 			</div>
 		{:else if sessionState.isLoggedIn}
@@ -367,7 +367,7 @@
 			<section class="mb-8">
 				<div class="bg-white/5 rounded-xl p-6 backdrop-blur-sm">
 					<div class="flex items-center gap-4 mb-4">
-						<CircleCheckBigIcon class="w-6 h-6 text-green-400" />
+						<CircleCheckBigIcon class="size-6 text-green-400" />
 						<h2 class="text-lg font-semibold text-white">ログイン済み</h2>
 					</div>
 
@@ -380,7 +380,7 @@
 					<!-- Import Section -->
 					<div class="border-t border-white/10 pt-6 mt-6">
 						<h3 class="text-md font-semibold text-white mb-4 flex items-center gap-2">
-							<DownloadIcon class="w-5 h-5 text-purple-400" />
+							<DownloadIcon class="size-5 text-purple-400" />
 							フォトをインポート
 						</h3>
 
@@ -408,10 +408,10 @@
 							disabled={isImporting || !selectedYm}
 						>
 							{#if isImporting}
-								<LoaderIcon class="w-5 h-5 animate-spin" />
+								<LoaderIcon class="size-5 animate-spin" />
 								インポート中...
 							{:else}
-								<DownloadIcon class="w-5 h-5" />
+								<DownloadIcon class="size-5" />
 								インポート開始
 							{/if}
 						</button>
@@ -438,9 +438,9 @@
 							<div class="p-3 rounded-lg {importResult.success ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}">
 								<p class="{importResult.success ? 'text-green-300' : 'text-red-300'} flex items-center gap-2">
 									{#if importResult.success}
-										<CircleCheckBigIcon class="w-5 h-5" />
+										<CircleCheckBigIcon class="size-5" />
 									{:else}
-										<CircleAlertIcon class="w-5 h-5" />
+										<CircleAlertIcon class="size-5" />
 									{/if}
 									{importResult.message}
 								</p>
@@ -454,7 +454,7 @@
 							class="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 flex items-center justify-center gap-2"
 							onclick={handleLogout}
 						>
-							<LogOutIcon class="w-5 h-5" />
+							<LogOutIcon class="size-5" />
 							全アカウントからログアウト
 						</button>
 					</div>
@@ -467,14 +467,14 @@
 					<div class="bg-[#1e1e2e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-white/10">
 						<div class="flex items-center justify-between mb-4">
 							<h2 class="text-lg font-semibold text-white flex items-center gap-2">
-								<LogInIcon class="w-5 h-5 text-purple-400" />
+								<LogInIcon class="size-5 text-purple-400" />
 								アカウントを追加
 							</h2>
 							<button
 								class="text-gray-400 hover:text-white transition-colors cursor-pointer"
 								onclick={() => { showAddForm = false; resetForm(); }}
 							>
-								<XIcon class="w-5 h-5" />
+								<XIcon class="size-5" />
 							</button>
 						</div>
 
@@ -496,7 +496,7 @@
 								/>
 								{#if cardIdTouched && cardIdError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<CircleAlertIcon class="w-4 h-4" />
+										<CircleAlertIcon class="size-4" />
 										{cardIdError}
 									</p>
 								{/if}
@@ -518,7 +518,7 @@
 								/>
 								{#if nameTouched && nameError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<CircleAlertIcon class="w-4 h-4" />
+										<CircleAlertIcon class="size-4" />
 										{nameError}
 									</p>
 								{/if}
@@ -557,13 +557,13 @@
 								</div>
 								{#if birthdayMTouched && birthdayMError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<CircleAlertIcon class="w-4 h-4" />
+										<CircleAlertIcon class="size-4" />
 										{birthdayMError}
 									</p>
 								{/if}
 								{#if birthdayDTouched && birthdayDError}
 									<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-										<CircleAlertIcon class="w-4 h-4" />
+										<CircleAlertIcon class="size-4" />
 										{birthdayDError}
 									</p>
 								{/if}
@@ -573,7 +573,7 @@
 							{#if sessionState.error}
 								<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
 									<p class="text-red-300 flex items-center gap-2">
-										<CircleAlertIcon class="w-5 h-5" />
+										<CircleAlertIcon class="size-5" />
 										{sessionState.error}
 									</p>
 								</div>
@@ -586,10 +586,10 @@
 								disabled={isLoggingIn}
 							>
 								{#if isLoggingIn}
-									<LoaderIcon class="w-5 h-5 animate-spin" />
+									<LoaderIcon class="size-5 animate-spin" />
 									ログイン中...
 								{:else}
-									<LogInIcon class="w-5 h-5" />
+									<LogInIcon class="size-5" />
 									アカウントを追加
 								{/if}
 							</button>
@@ -601,7 +601,7 @@
 			<!-- Login form -->
 			<section class="mb-8">
 				<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-					<LogInIcon class="w-5 h-5 text-purple-400" />
+					<LogInIcon class="size-5 text-purple-400" />
 					アイプリマイページログイン
 				</h2>
 
@@ -623,7 +623,7 @@
 						/>
 						{#if cardIdTouched && cardIdError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<CircleAlertIcon class="w-4 h-4" />
+								<CircleAlertIcon class="size-4" />
 								{cardIdError}
 							</p>
 						{/if}
@@ -645,7 +645,7 @@
 						/>
 						{#if nameTouched && nameError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<CircleAlertIcon class="w-4 h-4" />
+								<CircleAlertIcon class="size-4" />
 								{nameError}
 							</p>
 						{/if}
@@ -683,13 +683,13 @@
 						</div>
 						{#if birthdayMTouched && birthdayMError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<CircleAlertIcon class="w-4 h-4" />
+								<CircleAlertIcon class="size-4" />
 								{birthdayMError}
 							</p>
 						{/if}
 						{#if birthdayDTouched && birthdayDError}
 							<p class="mt-1 text-sm text-red-400 flex items-center gap-1">
-								<CircleAlertIcon class="w-4 h-4" />
+								<CircleAlertIcon class="size-4" />
 								{birthdayDError}
 							</p>
 						{/if}
@@ -699,7 +699,7 @@
 					{#if sessionState.error}
 						<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
 							<p class="text-red-300 flex items-center gap-2">
-								<CircleAlertIcon class="w-5 h-5" />
+								<CircleAlertIcon class="size-5" />
 								{sessionState.error}
 							</p>
 						</div>
@@ -712,10 +712,10 @@
 						disabled={isLoggingIn}
 					>
 						{#if isLoggingIn}
-							<LoaderIcon class="w-5 h-5 animate-spin" />
+							<LoaderIcon class="size-5 animate-spin" />
 							ログイン中...
 						{:else}
-							<LogInIcon class="w-5 h-5" />
+							<LogInIcon class="size-5" />
 							ログイン
 						{/if}
 					</button>

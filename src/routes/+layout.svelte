@@ -59,14 +59,14 @@
 <header class="bg-surface-100-900 h-8 fixed w-full z-40 top-0" style="-webkit-app-region: drag;">
 	<nav class="flex items-center justify-between px-1 h-full">
 		<div class="ml-0.5 flex items-center gap-2">
-			<img src={faviconPng} alt="VerseConnect" class="w-5 h-5 rounded-full transition-transform duration-500 hover:rotate-20 hover:scale-125 transform-gpu {isSpinning ? 'rotate-[360deg]' : ''} {skipTransition ? 'transition-none' : ''}">
+			<img src={faviconPng} alt="VerseConnect" class="size-5 rounded-full transition-transform duration-500 hover:rotate-20 hover:scale-125 transform-gpu {isSpinning ? 'rotate-360' : ''} {skipTransition ? 'transition-none' : ''}">
 			<span class="font-medium text-md font-mplus-rounded text-pink-100">VerseConnect</span>
 		</div>
 		<div class="flex items-center">
 			<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/import')} style="-webkit-app-region: no-drag;">
 				<Tooltip positioning={{placement: 'bottom'}}>
 					<Tooltip.Trigger>
-						<DownloadIcon class="w-4 h-4" />
+						<DownloadIcon class="size-4" />
 					</Tooltip.Trigger>
 					<Portal>
 						<Tooltip.Positioner>
@@ -83,7 +83,7 @@
 			<button class="flex items-center p-2 hover:bg-surface-200-800 rounded-lg transition-colors" onclick={() => goto('/settings')} style="-webkit-app-region: no-drag;">
 				<Tooltip positioning={{placement: 'bottom'}}>
 					<Tooltip.Trigger>
-						<SettingsIcon class="w-4 h-4" />
+						<SettingsIcon class="size-4" />
 					</Tooltip.Trigger>
 					<Portal>
 						<Tooltip.Positioner>
@@ -99,29 +99,29 @@
 			</button>
 			<!-- Window Controls -->
 			<div class="flex items-center ml-1 border-l border-surface-500/30 pl-1">
-				<button 
-					class="flex items-center justify-center w-8 h-8 hover:bg-surface-200-800 transition-colors" 
-					onclick={() => window.electronAPI?.windowMinimize()} 
+				<button
+					class="flex items-center justify-center size-8 hover:bg-surface-200-800 transition-colors"
+					onclick={() => window.electronAPI?.windowMinimize()}
 					style="-webkit-app-region: no-drag;"
 					aria-label="最小化"
 				>
-					<MinusIcon class="w-4.5 h-4.5" />
+					<MinusIcon class="size-4.5" />
 				</button>
-				<button 
-					class="flex items-center justify-center w-8 h-8 hover:bg-surface-200-800 transition-colors" 
-					onclick={() => window.electronAPI?.windowMaximize()} 
+				<button
+					class="flex items-center justify-center size-8 hover:bg-surface-200-800 transition-colors"
+					onclick={() => window.electronAPI?.windowMaximize()}
 					style="-webkit-app-region: no-drag;"
 					aria-label="最大化"
 				>
-					<SquareIcon class="w-3.5 h-3.5" />
+					<SquareIcon class="size-3.5" />
 				</button>
-				<button 
-					class="flex items-center justify-center w-8 h-8 hover:bg-red-600 transition-colors"
-					onclick={() => window.electronAPI?.windowClose()} 
+				<button
+					class="flex items-center justify-center size-8 hover:bg-red-600 transition-colors"
+					onclick={() => window.electronAPI?.windowClose()}
 					style="-webkit-app-region: no-drag;"
 					aria-label="閉じる"
 				>
-					<XIcon class="w-4.5 h-4.5" />
+					<XIcon class="size-4.5" />
 				</button>
 			</div>
 		</div>
@@ -137,7 +137,7 @@
 		<div class="flex items-center gap-1 text-xl font-mplus-rounded">VerseConnect</div>
 		<div class="flex items-center gap-1 text-xs text-gray-400">
 			<CopyrightIcon class="size-2.5 ml-1 rotate-[0.03deg]" />
-			2026 ulong32. Assisted by <span class="bg-gradient-to-br from-violet-300 to-sky-300 bg-clip-text text-transparent">Lumina</span>
+			2026 ulong32. Assisted by <span class="bg-linear-to-br from-violet-300 to-sky-300 bg-clip-text text-transparent">Lumina</span>
 			<Avatar class="size-6 bg-transparent">
 				<Avatar.Image src={LuminaPng} />
 				<Avatar.Fallback>

@@ -74,7 +74,7 @@
 
 <div class="bg-white/5 rounded-xl p-3 mb-4 backdrop-blur-sm">
 	<div class="flex items-center gap-2 mb-3">
-		<SearchIcon class="w-5 h-5" />
+		<SearchIcon class="size-5" />
 
 		<!-- Multi-select Toggle -->
 		<button
@@ -113,7 +113,7 @@
 			onclick={cycleFriendCardFilter}
 			title="フレンドカードで絞り込み"
 		>
-			<UsersIcon class="w-6 h-6 scale-[5/6]" />
+			<UsersIcon class="size-6 scale-[5/6]" />
 			{#if friendCardFilter === 'all'}
 				全て
 			{:else if friendCardFilter === 'with'}
@@ -129,7 +129,7 @@
 			onclick={() => onnocharacterfilterchange(!noCharacterFilter)}
 			title="キャラクター未登録で絞り込み"
 		>
-			<UserXIcon class="w-6 h-6 scale-[5/6]" />
+			<UserXIcon class="size-6 scale-[5/6]" />
 			キャラ無
 		</button>
 
@@ -139,7 +139,7 @@
 			onclick={() => onnoitemfilterchange(!noItemFilter)}
 			title="アイテム名未登録で絞り込み"
 		>
-			<CircleSlash2Icon class="w-6 h-6 scale-[5/6]" />
+			<CircleSlash2Icon class="size-6 scale-[5/6]" />
 			アイテム無
 		</button>
 
@@ -155,7 +155,7 @@
 
 	<!-- Character Filter -->
 	<div class="flex items-center gap-2 mb-2 flex-wrap">
-		<UserRoundIcon class="w-4 h-4 text-gray-500 shrink-0" />
+		<UserRoundIcon class="size-4 text-gray-500 shrink-0" />
 		{#each characters as char}
 			<button
 				class="px-2 py-0.5 text-xs rounded-full transition-all {selectedCharacters.includes(char)
@@ -173,7 +173,7 @@
 				onclick={() => onexactcharactermatchchange(!exactCharacterMatch)}
 				title="完全一致：選択したキャラクターのみが写っている画像を表示"
 			>
-				<EqualIcon class="w-3 h-3" />
+				<EqualIcon class="size-3" />
 				完全一致
 			</button>
 		{/if}
@@ -182,7 +182,7 @@
 	<!-- Tag Filter -->
 	{#if tags.length > 0}
 		<div class="flex items-center gap-2 mb-2 flex-wrap">
-			<TagIcon class="w-4 h-4 text-gray-500 shrink-0" />
+			<TagIcon class="size-4 text-gray-500 shrink-0" />
 			{#each tags as tag}
 				<button
 					class="px-2 py-0.5 text-xs rounded-full transition-all {selectedTags.includes(tag)
@@ -200,7 +200,7 @@
 					onclick={() => onexacttagmatchchange(!exactTagMatch)}
 					title="完全一致：選択したタグのみを持つ画像を表示"
 				>
-					<EqualIcon class="w-3 h-3" />
+					<EqualIcon class="size-3" />
 					完全一致
 				</button>
 			{/if}
@@ -209,7 +209,7 @@
 
 	<!-- Item Search -->
 	<div class="flex items-center gap-2">
-		<ShirtIcon class="w-4 h-4 text-gray-500 shrink-0" />
+		<ShirtIcon class="size-4 text-gray-500 shrink-0" />
 		<input
 			type="text"
 			value={searchItem}

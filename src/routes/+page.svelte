@@ -5,7 +5,7 @@
 	import ImageTile from '$lib/components/ImageTile.svelte';
 	import ImageModal from '$lib/components/ImageModal.svelte';
 	import BulkEditPanel from '$lib/components/BulkEditPanel.svelte';
-	import { 
+	import {
 		settingsState,
 		getAllCharacters,
 		getAllTags,
@@ -61,7 +61,7 @@
 
 	let filteredImages = $derived.by(() => {
 		let result = images;
-		
+
 		// Filter by characters
 		if (searchCharacters.length > 0) {
 			if (exactCharacterMatch) {
@@ -73,34 +73,34 @@
 				});
 			} else {
 				// Partial match (AND - must have all selected characters, but can have more)
-				result = result.filter(img => 
+				result = result.filter(img =>
 					searchCharacters.every(c => img.metadata?.characters?.includes(c))
 				);
 			}
 		}
-		
+
 		// Filter by item (exact match)
 		if (searchItem.trim()) {
 			result = result.filter(img => img.metadata?.item === searchItem.trim());
 		}
-		
+
 		// Filter by friend card
 		if (friendCardFilter === 'with') {
 			result = result.filter(img => !!img.metadata?.friend_card);
 		} else if (friendCardFilter === 'without') {
 			result = result.filter(img => !img.metadata?.friend_card);
 		}
-		
+
 		// Filter by missing character info
 		if (noCharacterFilter) {
 			result = result.filter(img => !img.metadata?.characters || img.metadata.characters.length === 0);
 		}
-		
+
 		// Filter by missing item info
 		if (noItemFilter) {
 			result = result.filter(img => !img.metadata?.item || img.metadata.item.trim() === '');
 		}
-		
+
 		// Filter by tags
 		if (searchTags.length > 0) {
 			if (exactTagMatch) {
@@ -112,17 +112,17 @@
 				});
 			} else {
 				// Partial match (AND - must have all selected tags, but can have more)
-				result = result.filter(img => 
+				result = result.filter(img =>
 					searchTags.every(t => img.metadata?.tags?.includes(t))
 				);
 			}
 		}
-		
+
 		// Filter by missing tag info
 		if (noTagFilter) {
 			result = result.filter(img => !img.metadata?.tags || img.metadata.tags.length === 0);
 		}
-		
+
 		// Sort by date first, then by serial number
 		if (sortOrder !== 'none') {
 			result = [...result].sort((a, b) => {
@@ -130,8 +130,8 @@
 				const aDate = a.extractedDate ?? '';
 				const bDate = b.extractedDate ?? '';
 				if (aDate !== bDate) {
-					return sortOrder === 'asc' 
-						? aDate.localeCompare(bDate) 
+					return sortOrder === 'asc'
+						? aDate.localeCompare(bDate)
 						: bDate.localeCompare(aDate);
 				}
 				// Same date, compare by serial
@@ -140,7 +140,7 @@
 				return sortOrder === 'asc' ? aSerial - bSerial : bSerial - aSerial;
 			});
 		}
-		
+
 		return result;
 	});
 
@@ -156,7 +156,7 @@
 				observer.disconnect();
 				observer = null;
 			}
-			
+
 			if (isEnabled) {
 				observer = new IntersectionObserver((entries) => {
 					const entry = entries[0];
@@ -200,7 +200,7 @@
 	// Load images from the selected folder
 	async function loadImages() {
 		if (!settingsState.folderPath || !window.electronAPI) return;
-		
+
 		isLoading = true;
 		try {
 			images = await window.electronAPI.getImages(settingsState.folderPath);
@@ -219,7 +219,7 @@
 		selectedImage = image;
 		selectedIndex = index;
 		showMetadataEditor = false;
-		
+
 		// Load metadata for this image (use cached if available)
 		currentMetadata = image.metadata || { characters: [], item: '', tags: [] };
 	}
@@ -255,7 +255,7 @@
 		if (!selectedImage) return;
 		// Don't handle if typing in input
 		if (event.target instanceof HTMLInputElement) return;
-		
+
 		switch (event.key) {
 			case 'Escape':
 				closeModal();
@@ -314,13 +314,13 @@
 	// Select friend card file
 	async function selectFriendCard(file: File) {
 		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
-		
+
 		// Read file as base64
 		const reader = new FileReader();
 		reader.onload = async () => {
 			const base64 = (reader.result as string).split(',')[1]; // Remove data:image/... prefix
 			const result = await window.electronAPI.saveFriendCard(settingsState.folderPath, file.name, base64);
-			
+
 			if (result.success) {
 				currentMetadata.friend_card = file.name;
 			} else {
@@ -333,22 +333,22 @@
 	// Save metadata
 	async function saveMetadata() {
 		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
-		
+
 		// Use $state.snapshot to get plain object for IPC
 		const metadataToSave = $state.snapshot(currentMetadata);
-		
+
 		// Calculate the correct folder path (handle subfolders)
-		const targetFolder = selectedImage.folder 
+		const targetFolder = selectedImage.folder
 			? `${settingsState.folderPath}/${selectedImage.folder}`.replace(/\\/g, '/')
 			: settingsState.folderPath;
-		
+
 		await window.electronAPI.setImageMetadata(targetFolder, selectedImage.name, metadataToSave);
-		
+
 		// Update local cache
 		if (selectedImage) {
 			selectedImage.metadata = metadataToSave;
 		}
-		
+
 		showMetadataEditor = false;
 	}
 
@@ -378,13 +378,13 @@
 
 	async function applyBulkCharacters(characters: string[], overwrite: boolean = false) {
 		if (!window.electronAPI || selectedImages.size === 0) return;
-		
+
 		isApplying = true;
 		bulkProgress = 0;
-		
+
 		const total = selectedImages.size;
 		let completed = 0;
-		
+
 		// Apply characters to all selected images
 		for (const imagePath of selectedImages) {
 			const img = images.find(i => i.path === imagePath);
@@ -393,33 +393,33 @@
 				bulkProgress = (completed / total) * 100;
 				continue;
 			}
-			
+
 			// Either overwrite or merge characters
-			const newChars = overwrite 
-				? characters 
+			const newChars = overwrite
+				? characters
 				: [...new Set([...(img.metadata?.characters || []), ...characters])];
-			
+
 			const newMetadata: ImageMetadata = {
 				characters: newChars,
 				item: img.metadata?.item || '',
 				friend_card: img.metadata?.friend_card,
 				tags: $state.snapshot(img.metadata?.tags || [])
 			};
-			
+
 			// Calculate correct folder
-			const targetFolder = img.folder 
+			const targetFolder = img.folder
 				? `${settingsState.folderPath}/${img.folder}`.replace(/\\\\/g, '/')
 				: settingsState.folderPath;
-			
+
 			await window.electronAPI.setImageMetadata(targetFolder, img.name, newMetadata);
-			
+
 			// Update local cache
 			img.metadata = newMetadata;
-			
+
 			completed++;
 			bulkProgress = (completed / total) * 100;
 		}
-		
+
 		// Trigger reactivity
 		images = [...images];
 		isApplying = false;
@@ -441,20 +441,20 @@
 	async function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		isDragging = false;
-		
+
 		if (!settingsState.folderPath || !window.electronAPI || !e.dataTransfer?.files) return;
-		
+
 		const files = Array.from(e.dataTransfer.files);
 		const zipFiles = files.filter(f => f.name.toLowerCase().endsWith('.zip'));
-		
+
 		if (zipFiles.length === 0) {
 			alert('ZIPファイルをドロップしてください');
 			return;
 		}
-		
+
 		isExtracting = true;
 		let totalExtracted = 0;
-		
+
 		for (const file of zipFiles) {
 			// Electron extends File with path property
 			const filePath = (file as File & { path: string }).path;
@@ -465,9 +465,9 @@
 				console.error('ZIP extraction error:', result.error);
 			}
 		}
-		
+
 		isExtracting = false;
-		
+
 		if (totalExtracted > 0) {
 			// Reload images
 			await loadImages();
@@ -480,8 +480,8 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div 
-	class="flex flex-col p-4 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative"
+<div
+	class="flex flex-col p-4 bg-linear-to-br from-[#1a1a2e] to-[#16213e] relative"
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
@@ -490,8 +490,8 @@
 
 	<!-- Search Panel -->
 	{#if images.length > 0}
-		<SearchPanel 
-			characters={getAllCharacters()} 
+		<SearchPanel
+			characters={getAllCharacters()}
 			selectedCharacters={searchCharacters}
 			tags={getAllTags()}
 			selectedTags={searchTags}
@@ -523,7 +523,7 @@
 		<div class="flex items-center justify-between mb-2 px-2">
 			<div class="flex items-center gap-3">
 				<span class="text-gray-400 text-sm">{filteredImages.length}件のプリフォト</span>
-				<button 
+				<button
 					class="flex items-center gap-1 px-2 py-1 size-8 bg-white/10 hover:bg-white/20 border-none rounded-lg text-gray-400 hover:text-white cursor-pointer transition-all text-sm"
 					onclick={loadImages}
 					title="再読み込み"
@@ -537,10 +537,10 @@
 				title={showTileInfo ? '情報を非表示' : '情報を表示'}
 			>
 				{#if showTileInfo}
-					<EyeIcon class="w-4 h-4" />
+					<EyeIcon class="size-4" />
 					<span>情報表示中</span>
 				{:else}
-					<EyeOffIcon class="w-4 h-4" />
+					<EyeOffIcon class="size-4" />
 					<span>情報非表示</span>
 				{/if}
 			</button>
@@ -566,19 +566,19 @@
 			</div>
 		{:else}
 			{#each displayedImages as image, index}
-				<div 
+				<div
 					class="h-fit relative"
 					use:infiniteScrollTrigger={index === displayedImages.length - 1}
 				>
 					{#if isMultiSelectMode}
-						<button 
+						<button
 							class="w-full"
 							class:brightness-80={selectedImages.has(image.path)}
 							onclick={() => toggleImageSelection(image.path)}
 						>
-							<div class="absolute top-2 left-2 z-10 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors {selectedImages.has(image.path) ? 'bg-purple-600 border-purple-600' : 'bg-black/50 border-white/50'}">
+							<div class="absolute top-2 left-2 z-10 size-6 rounded border-2 flex items-center justify-center transition-colors {selectedImages.has(image.path) ? 'bg-purple-600 border-purple-600' : 'bg-black/50 border-white/50'}">
 								{#if selectedImages.has(image.path)}
-									<CheckIcon class="w-4 h-4 text-white" />
+									<CheckIcon class="size-4 text-white" />
 								{/if}
 							</div>
 							<ImageTile {image} onclick={() => {}} showInfo={showTileInfo} />
@@ -588,12 +588,12 @@
 					{/if}
 				</div>
 			{/each}
-			
+
 			<!-- Loading indicator at bottom -->
 			{#if displayCount < filteredImages.length}
 				<div class="col-span-full flex items-center justify-center h-24 text-gray-500">
 					<div class="flex items-center gap-2">
-						<div class="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+						<div class="animate-spin size-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
 						<span>読み込み中... ({displayCount}/{filteredImages.length})</span>
 					</div>
 				</div>
@@ -634,7 +634,7 @@
 
 <!-- Bulk Edit Panel -->
 {#if isMultiSelectMode}
-	<BulkEditPanel 
+	<BulkEditPanel
 		selectedCount={selectedImages.size}
 		characters={getAllCharacters()}
 		{isApplying}

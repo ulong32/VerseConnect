@@ -145,7 +145,7 @@
 							onclick={openInExplorer}
 							title="エクスプローラで開く"
 						>
-							<FolderOpenIcon class="w-4 h-4" />
+							<FolderOpenIcon class="size-4" />
 						</button>
 						{#if friendCardUrl}
 							<button
@@ -153,7 +153,7 @@
 								onclick={toggleFriendCard}
 								title="フレンドカードを表示"
 							>
-								<ArrowLeftRightIcon class="w-4 h-4" />
+								<ArrowLeftRightIcon class="size-4" />
 							</button>
 						{/if}
 					</div>
@@ -174,7 +174,7 @@
 						{#if currentMetadata.tags && currentMetadata.tags.length > 0}
 							{#each currentMetadata.tags as tag}
 								<span class="px-2 py-1 bg-teal-600/50 text-white text-sm rounded-full flex items-center gap-1">
-									<TagIcon class="w-3 h-3" />{tag}
+									<TagIcon class="size-3" />{tag}
 								</span>
 							{/each}
 						{/if}
@@ -184,12 +184,12 @@
 						>
 						{#if showMetadataEditor}
 							<div class="flex items-center gap-1">
-								<XIcon class="w-4 h-4" />
+								<XIcon class="size-4" />
 								<span>閉じる</span>
 							</div>
 						{:else}
 							<div class="flex items-center gap-1">
-								<PenIcon class="w-4 h-4" />
+								<PenIcon class="size-4" />
 								<span>編集</span>
 							</div>
 						{/if}

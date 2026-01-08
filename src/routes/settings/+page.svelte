@@ -88,7 +88,7 @@
 			<!-- Folder Settings Section -->
 			<section class="mb-8">
 				<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-					<FolderIcon class="w-5 h-5 text-purple-400" />
+					<FolderIcon class="size-5 text-purple-400" />
 					フォルダ設定
 				</h2>
 				<div class="bg-white/5 rounded-xl p-4 backdrop-blur-sm">
@@ -101,9 +101,9 @@
 						>
 							<div class="flex items-center gap-2">
 								{#if isHovered}
-									<FolderOpenIcon class="w-5 h-5" />
+									<FolderOpenIcon class="size-5" />
 								{:else}
-									<FolderIcon class="w-5 h-5" />
+									<FolderIcon class="size-5" />
 								{/if}
 								フォルダを選択
 							</div>
@@ -122,7 +122,7 @@
 			<!-- Character Management Section -->
 			<section class="mb-8">
 				<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-					<UsersIcon class="w-5 h-5 text-purple-400" />
+					<UsersIcon class="size-5 text-purple-400" />
 					キャラクター管理
 				</h2>
 
@@ -157,7 +157,7 @@
 							disabled={!newCharacterInput.trim()}
 						>
 							<div class="flex items-center gap-2">
-								<UserPlusIcon class="w-5 h-5" />
+								<UserPlusIcon class="size-5" />
 								追加
 							</div>
 						</button>
@@ -176,7 +176,7 @@
 										onclick={() => handleRemoveCharacter(char)}
 										title="削除"
 									>
-										<XIcon class="w-3.5 h-3.5" />
+										<XIcon class="size-3.5" />
 									</button>
 								</div>
 							{/each}
@@ -188,7 +188,7 @@
 			<!-- Tag Management Section -->
 			<section>
 				<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-					<TagIcon class="w-5 h-5 text-teal-400" />
+					<TagIcon class="size-5 text-teal-400" />
 					タグ管理
 				</h2>
 
@@ -210,7 +210,7 @@
 							disabled={!newTagInput.trim()}
 						>
 							<div class="flex items-center gap-2">
-								<PlusIcon class="w-5 h-5" />
+								<PlusIcon class="size-5" />
 								追加
 							</div>
 						</button>
@@ -229,7 +229,7 @@
 										onclick={() => handleRemoveTag(tag)}
 										title="削除"
 									>
-										<XIcon class="w-3.5 h-3.5" />
+										<XIcon class="size-3.5" />
 									</button>
 								</div>
 							{/each}

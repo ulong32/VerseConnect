@@ -52,7 +52,7 @@
 	<div class="max-w-4xl mx-auto">
 		<div class="flex items-center justify-between mb-3">
 			<div class="flex items-center gap-2 text-white">
-				<SquareCheckIcon class="w-5 h-5" />
+				<SquareCheckIcon class="size-5" />
 				<span class="font-medium">{selectedCount}件選択中</span>
 			</div>
 			{#if !isApplying}
@@ -61,7 +61,7 @@
 					onclick={oncancel}
 					aria-label="選択モード終了"
 				>
-					<XIcon class="w-5 h-5 text-gray-400" />
+					<XIcon class="size-5 text-gray-400" />
 				</button>
 			{/if}
 		</div>
@@ -106,7 +106,7 @@
 						onclick={handleAddCharacter}
 						disabled={!newCharacterInput.trim()}
 					>
-						<PlusIcon class="w-4 h-4" />
+						<PlusIcon class="size-4" />
 						追加
 					</button>
 				</div>
@@ -125,7 +125,7 @@
 					<input 
 						type="checkbox" 
 						bind:checked={overwriteMode}
-						class="w-4 h-4 accent-orange-500"
+						class="size-4 accent-orange-500"
 					/>
 					<span class="text-sm {overwriteMode ? 'text-orange-400' : 'text-gray-400'}">
 						上書き
