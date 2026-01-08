@@ -1,6 +1,9 @@
 import { ipcMain, dialog } from 'electron';
 import { getStore } from '../store.js';
 
+/**
+ * @param {() => import('electron').BrowserWindow | null} getMainWindow
+ */
 export function setupAppHandlers(getMainWindow) {
   // フォルダ選択ダイアログ
   ipcMain.handle('select-folder', async () => {
@@ -44,6 +47,7 @@ export function setupAppHandlers(getMainWindow) {
   ipcMain.handle('show-confirm-dialog', async (event, options) => {
     const mainWindow = getMainWindow();
     const { title, message, okLabel, cancelLabel } = options;
+    /** @type {import('electron').MessageBoxSyncOptions} */
     const dialogOptions = {
       type: 'warning',
       title: title || '確認',
@@ -57,5 +61,27 @@ export function setupAppHandlers(getMainWindow) {
       : dialog.showMessageBoxSync(dialogOptions);
     // Returns 0 for cancel (first button), 1 for ok (second button)
     return result === 1;
+  });
+
+  // Window controls
+  ipcMain.on('window-minimize', () => {
+    const mainWindow = getMainWindow();
+    if (mainWindow) mainWindow.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    const mainWindow = getMainWindow();
+    if (mainWindow) mainWindow.close();
   });
 }

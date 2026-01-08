@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { MoveUpIcon, CheckIcon, RotateCcwIcon, EyeIcon, EyeOffIcon } from '@lucide/svelte';
+	import { CheckIcon, RotateCcwIcon, EyeIcon, EyeOffIcon } from '@lucide/svelte';
 	import SearchPanel from '$lib/components/SearchPanel.svelte';
 	import ImageTile from '$lib/components/ImageTile.svelte';
 	import ImageModal from '$lib/components/ImageModal.svelte';
@@ -38,8 +38,6 @@
 	let exactCharacterMatch = $state(false);
 	let exactTagMatch = $state(false);
 
-	// Scroll state
-	let showScrollTop = $state(false);
 
 	// Infinite scroll state
 	const BATCH_SIZE = 24;
@@ -149,29 +147,46 @@
 	// Displayed images (sliced for infinite scroll)
 	let displayedImages = $derived(filteredImages.slice(0, displayCount));
 
-	// Reset displayCount when filters change
-	$effect(() => {
-		// Access filteredImages to track it
-		filteredImages;
-		displayCount = BATCH_SIZE;
-	});
+	// Infinite scroll action
+	function infiniteScrollTrigger(node: HTMLElement, enabled: boolean) {
+		let observer: IntersectionObserver | null = null;
 
-	// Intersection observer for infinite scroll
-	$effect(() => {
-		if (!sentinelRef) return;
-		
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting && displayCount < filteredImages.length) {
-					displayCount = Math.min(displayCount + BATCH_SIZE, filteredImages.length);
+		function updateObserver(isEnabled: boolean) {
+			if (observer) {
+				observer.disconnect();
+				observer = null;
+			}
+			
+			if (isEnabled) {
+				observer = new IntersectionObserver((entries) => {
+					const entry = entries[0];
+					if (entry.isIntersecting && displayCount < filteredImages.length) {
+						displayCount = Math.min(displayCount + BATCH_SIZE, filteredImages.length);
+					}
+				}, { rootMargin: '200px' });
+				observer.observe(node);
+			}
+		}
+
+		updateObserver(enabled);
+
+		return {
+			update(newEnabled: boolean) {
+				if (newEnabled !== enabled) {
+					enabled = newEnabled;
+					updateObserver(newEnabled);
 				}
 			},
-			{ rootMargin: '400px' }
-		);
-		
-		observer.observe(sentinelRef);
-		
-		return () => observer.disconnect();
+			destroy() {
+				if (observer) observer.disconnect();
+			}
+		};
+	}
+
+	// Reset displayCount when filteredImages changes
+	$effect(() => {
+		filteredImages;
+		displayCount = BATCH_SIZE;
 	});
 
 	// Load settings and images on mount
@@ -337,14 +352,6 @@
 		showMetadataEditor = false;
 	}
 
-	// Handle scroll
-	function handleScroll() {
-		showScrollTop = window.scrollY > 300;
-	}
-
-	function scrollToTop() {
-		window.scrollTo({ top: 0, behavior: 'smooth' });
-	}
 
 	// Multi-select / Bulk edit functions
 	function toggleMultiSelectMode() {
@@ -396,7 +403,7 @@
 				characters: newChars,
 				item: img.metadata?.item || '',
 				friend_card: img.metadata?.friend_card,
-				tags: img.metadata?.tags || []
+				tags: $state.snapshot(img.metadata?.tags || [])
 			};
 			
 			// Calculate correct folder
@@ -471,10 +478,10 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} onscroll={handleScroll} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div 
-	class="flex flex-col  p-4 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative"
+	class="flex flex-col p-4 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative"
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
@@ -559,7 +566,10 @@
 			</div>
 		{:else}
 			{#each displayedImages as image, index}
-				<div class="h-fit relative">
+				<div 
+					class="h-fit relative"
+					use:infiniteScrollTrigger={index === displayedImages.length - 1}
+				>
 					{#if isMultiSelectMode}
 						<button 
 							class="w-full"
@@ -579,12 +589,9 @@
 				</div>
 			{/each}
 			
-			<!-- Sentinel element for infinite scroll -->
+			<!-- Loading indicator at bottom -->
 			{#if displayCount < filteredImages.length}
-				<div 
-					bind:this={sentinelRef}
-					class="col-span-full flex items-center justify-center h-24 text-gray-500"
-				>
+				<div class="col-span-full flex items-center justify-center h-24 text-gray-500">
 					<div class="flex items-center gap-2">
 						<div class="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
 						<span>読み込み中... ({displayCount}/{filteredImages.length})</span>
@@ -624,16 +631,6 @@
 	/>
 {/if}
 
-<!-- Scroll to Top Button -->
-{#if showScrollTop && !isMultiSelectMode}
-	<button
-		class="fixed bottom-6 right-6 size-12 bg-purple-600/50 hover:bg-purple-500 text-white rounded-full shadow-lg shadow-purple-600/30 flex items-center justify-center transition-all hover:scale-110 z-40"
-		onclick={scrollToTop}
-		aria-label="ページトップに戻る"
-	>
-		<MoveUpIcon class="size-5" />
-	</button>
-{/if}
 
 <!-- Bulk Edit Panel -->
 {#if isMultiSelectMode}

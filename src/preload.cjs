@@ -39,4 +39,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Dialogs
   showConfirmDialog: (options) => ipcRenderer.invoke('show-confirm-dialog', options),
+
+  // Window controls
+  windowMinimize: () => ipcRenderer.send('window-minimize'),
+  windowMaximize: () => ipcRenderer.send('window-maximize'),
+  windowClose: () => ipcRenderer.send('window-close'),
 });

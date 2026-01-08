@@ -27,11 +27,6 @@ export function createWindow(isDev) {
   const newWindow = new BrowserWindow({
     backgroundColor: 'whitesmoke',
     titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: '#120b18',
-      symbolColor: '#ffffff',
-      height: 32
-    },
     title: 'VerseConnect',
     icon: path.join(PROJECT_ROOT, 'src/lib/assets/favicon.png'),
     autoHideMenuBar: true,
@@ -39,8 +34,8 @@ export function createWindow(isDev) {
       x: 17,
       y: 32,
     },
-    minHeight: 450,
-    minWidth: 500,
+    minHeight: 720,
+    minWidth: 1280,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

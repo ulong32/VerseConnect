@@ -44,7 +44,7 @@
 	}
 </script>
 
-<div class="mt-4 p-4 bg-gray-800/80 backdrop-blur rounded-xl w-full max-w-md">
+<div class="p-4 bg-gray-800/80 backdrop-blur rounded-xl max-w-lg mx-auto">
 	<!-- Character Selection -->
 	<div class="mb-4">
 		<span class="block text-white text-sm font-medium mb-2">キャラクター</span>

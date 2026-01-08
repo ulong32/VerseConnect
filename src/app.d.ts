@@ -140,6 +140,10 @@ declare global {
 		aipriAddAccount: (credentials: AipriLoginCredentials) => Promise<AipriAddAccountResult>;
 		aipriRemoveAccount: (name: string) => Promise<AipriRemoveAccountResult>;
 		aipriSwitchAccount: (name: string) => Promise<AipriSwitchAccountResult>;
+		// Window controls
+		windowMinimize: () => void;
+		windowMaximize: () => void;
+		windowClose: () => void;
 	}
 
 	namespace App {
