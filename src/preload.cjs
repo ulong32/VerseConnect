@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aipriGetAccounts: () => ipcRenderer.invoke('aipri-get-accounts'),
   aipriAddAccount: (credentials) => ipcRenderer.invoke('aipri-add-account', credentials),
   aipriRemoveAccount: (name) => ipcRenderer.invoke('aipri-remove-account', name),
+  aipriUpdateAccount: (oldName, credentials) => ipcRenderer.invoke('aipri-update-account', oldName, credentials),
   aipriSwitchAccount: (name) => ipcRenderer.invoke('aipri-switch-account', name),
 
   // Dialogs

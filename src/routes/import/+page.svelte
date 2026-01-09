@@ -5,14 +5,16 @@
 	  checkSession,
 	  login,
 	  logout,
+	  updateAccount,
 	  sessionState
 	} from '$lib/stores/session.svelte';
 	import { ArrowLeftIcon, CircleAlertIcon, CircleCheckBigIcon, DownloadIcon, LoaderIcon, LogInIcon, LogOutIcon, XIcon } from '@lucide/svelte';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import { onMount } from 'svelte';
 
-	// UI state for add account form
+	// UI state for add/edit account form
 	let showAddForm = $state(false);
+	let editingAccount = $state<AipriAccount | null>(null);
 
 	// Form state
 	let cardId = $state('');
@@ -277,7 +279,7 @@
 			   !validateBirthdayD(birthdayD, birthdayM);
 	}
 
-	// Login handler
+	// Login/Update handler
 	async function handleLogin() {
 		// Validate all fields
 		cardIdTouched = nameTouched = birthdayMTouched = birthdayDTouched = true;
@@ -297,13 +299,26 @@
 			birthdayD: birthdayD.padStart(2, '0')
 		};
 
-		await login(credentials);
-		isLoggingIn = false;
+		if (editingAccount) {
+			// Update existing account
+			const result = await updateAccount(editingAccount.name, credentials);
+			isLoggingIn = false;
 
-		// Close add form on successful login
-		if (sessionState.isLoggedIn) {
-			showAddForm = false;
-			resetForm();
+			if (result.success) {
+				showAddForm = false;
+				editingAccount = null;
+				resetForm();
+			}
+		} else {
+			// Add new account
+			await login(credentials);
+			isLoggingIn = false;
+
+			// Close add form on successful login
+			if (sessionState.isLoggedIn) {
+				showAddForm = false;
+				resetForm();
+			}
 		}
 	}
 
@@ -374,7 +389,17 @@
 					<!-- Account Selector -->
 					<div class="mb-6">
 						<p class="text-gray-400 text-sm mb-3">アカウント</p>
-						<AccountSelector onAddClick={() => showAddForm = true} />
+						<AccountSelector 
+							onAddClick={() => showAddForm = true}
+							onEditClick={(account) => {
+								editingAccount = account;
+								cardId = account.cardId;
+								name = account.name;
+								birthdayM = account.birthdayM;
+								birthdayD = account.birthdayD;
+								showAddForm = true;
+							}}
+						/>
 					</div>
 
 					<!-- Import Section -->
@@ -461,18 +486,18 @@
 				</div>
 			</section>
 
-			<!-- Add Account Modal Overlay -->
+			<!-- Add/Edit Account Modal Overlay -->
 			{#if showAddForm}
 				<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
 					<div class="bg-[#1e1e2e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-white/10">
 						<div class="flex items-center justify-between mb-4">
 							<h2 class="text-lg font-semibold text-white flex items-center gap-2">
 								<LogInIcon class="size-5 text-purple-400" />
-								アカウントを追加
+								{editingAccount ? 'アカウント情報を編集' : 'アカウントを追加'}
 							</h2>
 							<button
 								class="text-gray-400 hover:text-white transition-colors cursor-pointer"
-								onclick={() => { showAddForm = false; resetForm(); }}
+								onclick={() => { showAddForm = false; editingAccount = null; resetForm(); }}
 							>
 								<XIcon class="size-5" />
 							</button>
@@ -579,7 +604,7 @@
 								</div>
 							{/if}
 
-							<!-- Add button -->
+							<!-- Add/Update button -->
 							<button
 								class="w-full px-4 py-3 bg-linear-to-r from-indigo-500 to-purple-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
 								onclick={handleLogin}
@@ -587,10 +612,10 @@
 							>
 								{#if isLoggingIn}
 									<LoaderIcon class="size-5 animate-spin" />
-									ログイン中...
+									{editingAccount ? '更新中...' : 'ログイン中...'}
 								{:else}
 									<LogInIcon class="size-5" />
-									アカウントを追加
+									{editingAccount ? 'アカウントを更新' : 'アカウントを追加'}
 								{/if}
 							</button>
 						</div>

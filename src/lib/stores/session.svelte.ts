@@ -157,6 +157,33 @@ export async function removeAccount(name: string): Promise<void> {
   }
 }
 
+// Update account credentials
+export async function updateAccount(oldName: string, credentials: AipriLoginCredentials): Promise<AipriUpdateAccountResult> {
+  if (!window.electronAPI) {
+    return { success: false, error: 'Electron APIが利用できません' };
+  }
+
+  sessionState.error = null;
+
+  try {
+    const result = await window.electronAPI.aipriUpdateAccount(oldName, credentials);
+
+    if (result.success) {
+      // Reload accounts to get updated data
+      await loadAccounts();
+    } else {
+      sessionState.error = result.error || 'アカウント更新に失敗しました';
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Update account error:', error);
+    const errorMessage = `通信エラー: ${String(error)}`;
+    sessionState.error = errorMessage;
+    return { success: false, error: errorMessage };
+  }
+}
+
 // Switch to a different account
 export async function switchAccount(name: string): Promise<AipriSwitchAccountResult> {
   if (!window.electronAPI) {

@@ -89,6 +89,71 @@ export function setupAipriHandlers() {
     return { success: true };
   });
 
+  // Update account credentials (re-login with new credentials)
+  ipcMain.handle('aipri-update-account', async (event, oldName, credentials) => {
+    const store = getStore();
+    const accounts = store.get('aipriAccounts') || [];
+    const activeAccountName = store.get('aipriActiveAccountName');
+
+    // Find the account to update
+    const accountIndex = accounts.findIndex(acc => acc.name === oldName);
+    if (accountIndex === -1) {
+      return { success: false, error: 'アカウントが見つかりません' };
+    }
+
+    const oldAccount = accounts[accountIndex];
+
+    // Check if new name conflicts with existing account (if name changed)
+    if (credentials.name !== oldName) {
+      if (accounts.some(acc => acc.name === credentials.name)) {
+        return { success: false, error: 'この名前のアカウントは既に登録されています' };
+      }
+    }
+
+    // Perform login with new credentials to verify they work
+    const loginResult = await aipriService.performLogin(credentials);
+    if (!loginResult.success) {
+      return { success: false, error: loginResult.error };
+    }
+
+    // Delete old profile image if exists
+    if (oldAccount.profileImagePath && fs.existsSync(oldAccount.profileImagePath)) {
+      try {
+        fs.unlinkSync(oldAccount.profileImagePath);
+      } catch (err) {
+        console.error('Error deleting old profile image:', err);
+      }
+    }
+
+    // Download and save new profile image
+    let profileImagePath = null;
+    if (loginResult.profileImageUrl) {
+      profileImagePath = await aipriService.downloadAndSaveProfileImage(loginResult.profileImageUrl, credentials.name);
+    }
+
+    // Create updated account object
+    const updatedAccount = {
+      name: credentials.name,
+      cardId: credentials.cardId,
+      birthdayM: credentials.birthdayM,
+      birthdayD: credentials.birthdayD,
+      sessionCookie: loginResult.cookies || null,
+      profileImagePath
+    };
+
+    // Update accounts array
+    const updatedAccounts = [...accounts];
+    updatedAccounts[accountIndex] = updatedAccount;
+    store.set('aipriAccounts', updatedAccounts);
+
+    // Update active account name if it was the one being edited
+    if (activeAccountName === oldName) {
+      store.set('aipriActiveAccountName', credentials.name);
+    }
+
+    return { success: true, profileImagePath };
+  });
+
   // Switch active account
   ipcMain.handle('aipri-switch-account', async (event, name) => {
     const store = getStore();

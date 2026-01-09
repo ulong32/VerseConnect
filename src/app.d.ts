@@ -118,6 +118,12 @@ declare global {
 		success: boolean;
 	}
 
+	interface AipriUpdateAccountResult {
+		success: boolean;
+		error?: string;
+		profileImagePath?: string;
+	}
+
 	interface ElectronAPI {
 		selectFolder: () => Promise<string | null>;
 		getImages: (folderPath: string) => Promise<ImageInfo[]>;
@@ -139,6 +145,7 @@ declare global {
 		aipriGetAccounts: () => Promise<AipriAccountsResult>;
 		aipriAddAccount: (credentials: AipriLoginCredentials) => Promise<AipriAddAccountResult>;
 		aipriRemoveAccount: (name: string) => Promise<AipriRemoveAccountResult>;
+		aipriUpdateAccount: (oldName: string, credentials: AipriLoginCredentials) => Promise<AipriUpdateAccountResult>;
 		aipriSwitchAccount: (name: string) => Promise<AipriSwitchAccountResult>;
 		// Window controls
 		windowMinimize: () => void;

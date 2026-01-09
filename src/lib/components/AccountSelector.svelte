@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon, PlusIcon, PencilIcon, XIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
+	import { CheckIcon, PlusIcon, PencilIcon, PencilLineIcon, XIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
 	import { Avatar } from '@skeletonlabs/skeleton-svelte';
 	import {
 		sessionState,
@@ -10,9 +10,10 @@
 
 	interface Props {
 		onAddClick: () => void;
+		onEditClick?: (account: AipriAccount) => void;
 	}
 
-	let { onAddClick }: Props = $props();
+	let { onAddClick, onEditClick }: Props = $props();
 
 	let isSwitching = $state<string | null>(null);
 
@@ -33,11 +34,29 @@
 				return;
 			}
 		}
+
+		// Show confirmation dialog
+		const confirmed = await window.electronAPI.showConfirmDialog({
+			title: 'VerseConnect',
+			message: `アカウント「${name}」を削除しますか？\nこの操作は取り消せません。`,
+			okLabel: '削除',
+			cancelLabel: 'キャンセル'
+		});
+
+		if (!confirmed) return;
+
 		await removeAccount(name);
 
 		// Exit edit mode if no accounts left
 		if (sessionState.accounts.length === 0) {
 			sessionState.isEditMode = false;
+		}
+	}
+
+	function handleEditClick(account: AipriAccount, e: Event) {
+		e.stopPropagation();
+		if (onEditClick) {
+			onEditClick(account);
 		}
 	}
 
@@ -85,7 +104,21 @@
             <CheckIcon class="size-3 text-white" />
           </div>
         {/if}
-        <!-- Remove button (edit mode) -->
+        <!-- Edit button (edit mode) - top left -->
+        {#if sessionState.isEditMode}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <span
+            class="absolute -top-1 -left-1 size-5 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors cursor-pointer"
+            onclick={(e) => handleEditClick(account, e)}
+            onkeydown={(e) => e.key === 'Enter' && handleEditClick(account, e)}
+            role="button"
+            tabindex="0"
+            title="編集"
+          >
+            <PencilLineIcon class="size-3 text-white" />
+          </span>
+        {/if}
+        <!-- Remove button (edit mode) - top right -->
         {#if sessionState.isEditMode && !(account.name === sessionState.activeAccountName && sessionState.accounts.length === 1)}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <span
