@@ -50,9 +50,6 @@
 	let isApplying = $state(false);
 	let bulkProgress = $state(0);
 
-	// Drag & Drop state
-	let isDragging = $state(false);
-	let isExtracting = $state(false);
 
 	// Tile display state
 	let showTileInfo = $state(true);
@@ -428,67 +425,11 @@
 		cancelBulkEdit();
 	}
 
-	// Drag & Drop handlers for ZIP files
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault();
-		if (settingsState.folderPath && e.dataTransfer?.types.includes('Files')) {
-			isDragging = true;
-		}
-	}
-
-	function handleDragLeave() {
-		isDragging = false;
-	}
-
-	async function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		isDragging = false;
-
-		if (!settingsState.folderPath || !window.electronAPI || !e.dataTransfer?.files) return;
-
-		const files = Array.from(e.dataTransfer.files);
-		const zipFiles = files.filter(f => f.name.toLowerCase().endsWith('.zip'));
-
-		if (zipFiles.length === 0) {
-			alert('ZIPファイルをドロップしてください');
-			return;
-		}
-
-		isExtracting = true;
-		let totalExtracted = 0;
-
-		for (const file of zipFiles) {
-			// Electron extends File with path property
-			const filePath = (file as File & { path: string }).path;
-			const result = await window.electronAPI.extractZip(filePath, settingsState.folderPath);
-			if (result.success) {
-				totalExtracted += result.extracted;
-			} else {
-				console.error('ZIP extraction error:', result.error);
-			}
-		}
-
-		isExtracting = false;
-
-		if (totalExtracted > 0) {
-			// Reload images
-			await loadImages();
-			alert(`${totalExtracted}件の画像を追加しました`);
-		} else {
-			alert('画像が見つかりませんでした');
-		}
-	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div
-	class="flex flex-col p-4 bg-linear-to-br from-[#1a1a2e] to-[#16213e] relative"
-	ondragover={handleDragOver}
-	ondragleave={handleDragLeave}
-	ondrop={handleDrop}
-	role="application"
->
+<div class="flex flex-col p-4 bg-linear-to-br from-[#1a1a2e] to-[#16213e] relative">
 
 	<!-- Search Panel -->
 	{#if images.length > 0}
@@ -646,23 +587,4 @@
 	/>
 {/if}
 
-<!-- Drag Overlay -->
-{#if isDragging}
-	<div class="fixed inset-0 bg-purple-600/30 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
-		<div class="bg-gray-900/90 rounded-2xl p-8 text-center border-2 border-dashed border-purple-500">
-			<div class="text-5xl mb-4">📦</div>
-			<p class="text-white text-xl font-medium">ZIPファイルをドロップして解凍</p>
-			<p class="text-gray-400 text-sm mt-2">画像を{settingsState.folderPath}に追加します</p>
-		</div>
-	</div>
-{/if}
 
-<!-- Extracting Overlay -->
-{#if isExtracting}
-	<div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-		<div class="bg-gray-900 rounded-2xl p-8 text-center">
-			<div class="animate-spin text-5xl mb-4">⚙️</div>
-			<p class="text-white text-xl font-medium">解凍中...</p>
-		</div>
-	</div>
-{/if}

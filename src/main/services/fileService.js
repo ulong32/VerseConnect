@@ -1,4 +1,3 @@
-import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
 
@@ -133,61 +132,6 @@ export const scanFolder = (folderPath) => {
   } catch (error) {
     console.error('Error reading folder:', error);
     return [];
-  }
-};
-
-/**
- * ZIPファイルを展開して画像を抽出
- * @param {string} zipPath
- * @param {string} targetFolder
- * @returns {{ success: boolean, error?: string, extracted: number }}
- */
-export const extractZip = (zipPath, targetFolder) => {
-  if (!zipPath || !targetFolder) {
-    return { success: false, error: 'Invalid parameters', extracted: 0 };
-  }
-
-  try {
-    const zip = new AdmZip(zipPath);
-    const entries = zip.getEntries();
-    let extractedCount = 0;
-
-    for (const entry of entries) {
-      // Skip directories
-      if (entry.isDirectory) continue;
-
-      // Get just the filename (ignore folder structure in ZIP)
-      const filename = path.basename(entry.entryName);
-
-      // Check if it's an image
-      const ext = path.extname(filename).toLowerCase();
-      if (!['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].includes(ext)) {
-        continue;
-      }
-
-      // Skip hidden files and macOS metadata
-      if (filename.startsWith('.') || filename.startsWith('__MACOSX')) {
-        continue;
-      }
-
-      // Extract to target folder
-      const targetPath = path.join(targetFolder, filename);
-
-      // Avoid overwriting existing files
-      if (fs.existsSync(targetPath)) {
-        console.log('Skipping existing file:', filename);
-        continue;
-      }
-
-      const content = entry.getData();
-      fs.writeFileSync(targetPath, content);
-      extractedCount++;
-    }
-
-    return { success: true, extracted: extractedCount };
-  } catch (error) {
-    console.error('Error extracting ZIP:', error);
-    return { success: false, error: String(error), extracted: 0 };
   }
 };
 

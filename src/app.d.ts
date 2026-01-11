@@ -42,12 +42,6 @@ declare global {
 		cancelLabel?: string;
 	}
 
-	interface ZipExtractionResult {
-		success: boolean;
-		extracted: number;
-		error?: string;
-	}
-
 	interface FriendCardResult {
 		success: boolean;
 		filename?: string;
@@ -145,7 +139,6 @@ declare global {
 		setSettings: (settings: Partial<Settings>) => Promise<boolean>;
 		getImageMetadata: (folderPath: string, imageName: string) => Promise<ImageMetadata | null>;
 		setImageMetadata: (folderPath: string, imageName: string, metadata: ImageMetadata) => Promise<boolean>;
-		extractZip: (zipPath: string, targetFolder: string) => Promise<ZipExtractionResult>;
 		showItemInFolder: (filePath: string) => Promise<boolean>;
 		showConfirmDialog: (options: DialogOptions) => Promise<boolean>;
 		saveFriendCard: (folderPath: string, filename: string, base64Data: string) => Promise<FriendCardResult>;

@@ -22,11 +22,6 @@ export function setupFileHandlers() {
     return fileService.saveFolderMetadata(folderPath, allMetadata);
   });
 
-  // ZIPファイルを解凍して画像を抽出
-  ipcMain.handle('extract-zip', async (event, zipPath, targetFolder) => {
-    return fileService.extractZip(zipPath, targetFolder);
-  });
-
   // ファイルをエクスプローラで表示
   ipcMain.handle('show-item-in-folder', async (event, filePath) => {
     if (!filePath) return false;

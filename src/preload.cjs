@@ -18,9 +18,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getImageMetadata: (folderPath, imageName) => ipcRenderer.invoke('get-image-metadata', folderPath, imageName),
   setImageMetadata: (folderPath, imageName, metadata) => ipcRenderer.invoke('set-image-metadata', folderPath, imageName, metadata),
 
-  // ZIP extraction
-  extractZip: (zipPath, targetFolder) => ipcRenderer.invoke('extract-zip', zipPath, targetFolder),
-
   // File explorer
   showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
 
