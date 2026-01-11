@@ -183,10 +183,12 @@
 		};
 	}
 
-	// Reset displayCount when filteredImages changes
+	// Reset displayCount when filteredImages changes (but not while modal is open)
 	$effect(() => {
 		filteredImages;
-		displayCount = BATCH_SIZE;
+		if (!selectedImage) {
+			displayCount = BATCH_SIZE;
+		}
 	});
 
 	// Load settings and images on mount
@@ -568,7 +570,7 @@
 			{#each displayedImages as image, index}
 				<div
 					class="h-fit relative"
-					use:infiniteScrollTrigger={index === displayedImages.length - 1}
+					use:infiniteScrollTrigger={index === displayedImages.length - 1 && !selectedImage}
 				>
 					{#if isMultiSelectMode}
 						<button
