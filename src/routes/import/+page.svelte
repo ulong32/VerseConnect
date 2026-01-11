@@ -43,6 +43,7 @@
 	let importProgress = $state({ current: 0, total: 0, skipped: 0 });
 	let importResult = $state<{ success: boolean; message: string } | null>(null);
 	let folderPath = $state('');
+	let subFolder = $state('');
 
 	// Generate year-month options
 	function getYmOptions(): { value: string; label: string }[] {
@@ -75,11 +76,18 @@
 
 		// Get folder path from settings
 		const settings = await window.electronAPI.getSettings();
-		folderPath = settings.folderPath;
+		const baseFolderPath = settings.folderPath;
 
-		if (!folderPath) {
+		if (!baseFolderPath) {
 			importResult = { success: false, message: 'フォルダが設定されていません。設定画面で保存先フォルダを選択してください。' };
 			return;
+		}
+
+		// Combine base folder path with subfolder if specified
+		if (subFolder.trim()) {
+			folderPath = `${baseFolderPath}/${subFolder.trim()}`;
+		} else {
+			folderPath = baseFolderPath;
 		}
 
 		isImporting = true;
@@ -424,6 +432,24 @@
 									<option value={option.value} class="bg-gray-800">{option.label}</option>
 								{/each}
 							</select>
+						</div>
+
+						<!-- Subfolder Input -->
+						<div class="mb-4">
+							<label for="subFolder" class="block text-sm font-medium text-gray-300 mb-2">
+								保存先サブフォルダ（任意）
+							</label>
+							<input
+								type="text"
+								id="subFolder"
+								class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+								placeholder="例: aipriverse_album_20xxxx"
+								bind:value={subFolder}
+								disabled={isImporting}
+							/>
+							<p class="mt-1 text-xs text-gray-400">
+								設定のフォルダパスに追加されます
+							</p>
 						</div>
 
 						<!-- Import Button -->
