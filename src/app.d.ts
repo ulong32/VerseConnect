@@ -25,8 +25,21 @@ declare global {
 
 	interface Settings {
 		folderPath: string;
+		itemImageFolderPath: string;
 		customCharacters: string[];
 		customTags: string[];  // App-wide tag presets
+	}
+
+	interface SelectFileOptions {
+		defaultPath?: string;
+		filters?: { name: string; extensions: string[] }[];
+	}
+
+	interface DialogOptions {
+		title?: string;
+		message: string;
+		okLabel?: string;
+		cancelLabel?: string;
 	}
 
 	interface ZipExtractionResult {
@@ -126,6 +139,7 @@ declare global {
 
 	interface ElectronAPI {
 		selectFolder: () => Promise<string | null>;
+		selectFile: (options?: SelectFileOptions) => Promise<string | null>;
 		getImages: (folderPath: string) => Promise<ImageInfo[]>;
 		getSettings: () => Promise<Settings>;
 		setSettings: (settings: Partial<Settings>) => Promise<boolean>;

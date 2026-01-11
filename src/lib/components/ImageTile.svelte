@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CalendarIcon, FolderClosedIcon, HashIcon, ImageIcon, ShirtIcon, TagIcon, UserRoundIcon } from '@lucide/svelte';
+	import { ITEM_IMAGE_SUFFIX, settingsState } from '$lib/stores/settings.svelte';
 	interface Props {
 		image: ImageInfo;
 		onclick: () => void;
@@ -7,6 +8,35 @@
 	}
 
 	let { image, onclick, showInfo = true }: Props = $props();
+
+	// Get static folder path for item image
+	function getStaticItemImageSrc(item: string): string {
+		return `/item/${item}${ITEM_IMAGE_SUFFIX}`;
+	}
+
+	// Build item image src based on settings
+	function getItemImageSrc(item: string): string {
+		if (settingsState.itemImageFolderPath) {
+			// Use custom protocol with user-configured folder
+			return `item-image://${item}${ITEM_IMAGE_SUFFIX}`;
+		}
+		// Fallback to static folder
+		return getStaticItemImageSrc(item);
+	}
+
+	// Handle image load error with fallback
+	function handleItemImageError(e: Event, item: string) {
+		const img = e.currentTarget as HTMLImageElement;
+		const staticSrc = getStaticItemImageSrc(item);
+		
+		// If currently using custom protocol and static fallback exists, try it
+		if (img.src.startsWith('item-image://') && img.src !== staticSrc) {
+			img.src = staticSrc;
+		} else {
+			// Both sources failed, hide the image
+			img.style.display = 'none';
+		}
+	}
 </script>
 
 <button
@@ -40,7 +70,7 @@
 			<div class="flex items-center gap-2 text-xs mb-1 text-gray-400">
 				<span class="flex items-center gap-1">
 					<FolderClosedIcon class="size-4 text-gray-500" />
-					<span class="truncate max-w-15">{image.folder || '.'}</span>
+					<span class="truncate max-w-">{image.folder || '.'}</span>
 				</span>
 			</div>
 			<!-- Item -->
@@ -49,11 +79,11 @@
 				{#if image.metadata?.item}
 					<img
 						class="size-16 object-contain rounded shrink-0"
-						src="/item/{image.metadata.item}_150.webp"
+						src={getItemImageSrc(image.metadata.item)}
 						alt={image.metadata.item}
-						onerror={(e) => (e.currentTarget as HTMLImageElement).style.display = 'none'}
+						onerror={(e) => handleItemImageError(e, image.metadata!.item)}
 					/>
-					<span class="text-white text-sm truncate">{image.metadata.item}</span>
+					<span class="text-white text-sm truncate" style="direction: rtl; text-align: left;">{image.metadata.item}</span>
 				{:else}
 					<div class="size-16 bg-gray-700/50 rounded flex items-center justify-center shrink-0">
 						<ImageIcon class="size-6 text-gray-700" />

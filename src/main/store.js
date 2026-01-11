@@ -2,7 +2,7 @@ import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
-/** @type {import('electron-store').default<{folderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountName: string | null}> | undefined} */
+/** @type {import('electron-store').default<{folderPath: string, itemImageFolderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountName: string | null}> | undefined} */
 let store;
 
 export async function initStore() {
@@ -11,6 +11,7 @@ export async function initStore() {
   store = new Store({
     defaults: {
       folderPath: '',
+      itemImageFolderPath: '',
       customCharacters: [],
       customTags: [],
       aipriAccounts: [],           // Array of AipriAccount

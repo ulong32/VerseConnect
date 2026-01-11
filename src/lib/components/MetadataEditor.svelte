@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ImageIcon, TagIcon } from '@lucide/svelte';
+	import { ITEM_IMAGE_SUFFIX, settingsState } from '$lib/stores/settings.svelte';
 
 	interface Props {
 		allCharacters: string[];
@@ -35,12 +36,95 @@
 		onselectfriendcard
 	}: Props = $props();
 
+	let itemImageError = $state(false);
+
+	// Get static folder path for item image
+	function getStaticItemImageSrc(item: string): string {
+		return `/item/${item}${ITEM_IMAGE_SUFFIX}`;
+	}
+
+	// Build item image src based on settings
+	function getItemImageSrc(item: string): string {
+		if (settingsState.itemImageFolderPath) {
+			return `item-image://${item}${ITEM_IMAGE_SUFFIX}`;
+		}
+		return getStaticItemImageSrc(item);
+	}
+
+	// Handle image load error with fallback
+	function handleItemImageError(e: Event, item: string) {
+		const img = e.currentTarget as HTMLImageElement;
+		const staticSrc = getStaticItemImageSrc(item);
+		
+		if (img.src.startsWith('item-image://') && img.src !== staticSrc) {
+			img.src = staticSrc;
+		} else {
+			itemImageError = true;
+		}
+	}
+
+	// Reset error state when item changes
+	$effect(() => {
+		if (currentMetadata.item) {
+			itemImageError = false;
+		}
+	});
+
 	function handleFileSelect(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		if (file) {
 			onselectfriendcard(file);
 		}
+	}
+
+	// Handle item image click to open file selection dialog
+	async function handleItemImageClick() {
+		if (!window.electronAPI || !settingsState.itemImageFolderPath) {
+			await window.electronAPI?.showConfirmDialog({
+				title: 'エラー',
+				message: 'アイテム画像フォルダが設定されていません。設定画面でフォルダを指定してください。',
+				okLabel: 'OK'
+			});
+			return;
+		}
+
+		const selectedPath = await window.electronAPI.selectFile({
+			defaultPath: settingsState.itemImageFolderPath,
+			filters: [{ name: 'Item Images', extensions: ['webp'] }]
+		});
+
+		if (!selectedPath) return;
+
+		// Normalize paths for comparison (handle Windows/Unix differences)
+		const normalizedSelected = selectedPath.replace(/\\/g, '/');
+		const normalizedFolder = settingsState.itemImageFolderPath.replace(/\\/g, '/');
+
+		// Validate: file must be inside itemImageFolderPath
+		if (!normalizedSelected.startsWith(normalizedFolder + '/')) {
+			await window.electronAPI.showConfirmDialog({
+				title: 'エラー',
+				message: `選択されたファイルはアイテム画像フォルダ内にありません。\n\n指定フォルダ: ${settingsState.itemImageFolderPath}`,
+				okLabel: 'OK'
+			});
+			return;
+		}
+
+		// Validate: file must end with ITEM_IMAGE_SUFFIX
+		if (!normalizedSelected.endsWith(ITEM_IMAGE_SUFFIX)) {
+			await window.electronAPI.showConfirmDialog({
+				title: 'エラー',
+				message: `ファイル名は「${ITEM_IMAGE_SUFFIX}」で終わる必要があります。`,
+				okLabel: 'OK'
+			});
+			return;
+		}
+
+		// Extract relative path from folder and remove suffix
+		const relativePath = normalizedSelected.slice(normalizedFolder.length + 1);
+		const itemValue = relativePath.slice(0, -ITEM_IMAGE_SUFFIX.length);
+
+		onupdateitem(itemValue);
 	}
 </script>
 
@@ -118,16 +202,37 @@
 		</div>
 	</div>
 
-	<!-- Item Input -->
+	<!-- Item Input with Preview -->
 	<div class="mb-4">
 		<span class="block text-white text-sm font-medium mb-2">アイテム</span>
-		<input
-			type="text"
-			value={currentMetadata.item}
-			oninput={(e) => onupdateitem(e.currentTarget.value)}
-			placeholder="アイテム名を入力"
-			class="w-full px-3 py-2 bg-white/10 text-white rounded-lg border border-white/20 focus:border-blue-500 focus:outline-none"
-		/>
+		<div class="flex gap-3 items-start">
+			<button
+				type="button"
+				class="size-16 shrink-0 rounded cursor-pointer transition-all hover:ring-2 hover:ring-purple-500 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500"
+				onclick={handleItemImageClick}
+				title="クリックしてアイテム画像を選択"
+			>
+				{#if currentMetadata.item && !itemImageError}
+					<img
+						class="size-16 object-contain rounded bg-black/30"
+						src={getItemImageSrc(currentMetadata.item)}
+						alt={currentMetadata.item}
+						onerror={(e) => handleItemImageError(e, currentMetadata.item)}
+					/>
+				{:else}
+					<div class="size-16 bg-gray-700/50 rounded flex items-center justify-center">
+						<ImageIcon class="size-6 text-gray-600" />
+					</div>
+				{/if}
+			</button>
+			<input
+				type="text"
+				value={currentMetadata.item}
+				oninput={(e) => onupdateitem(e.currentTarget.value)}
+				placeholder="アイテム名を入力"
+				class="flex-1 px-3 py-2 bg-white/10 text-white rounded-lg border border-white/20 focus:border-blue-500 focus:outline-none"
+			/>
+		</div>
 	</div>
 
 	<!-- Friend Card File Input -->

@@ -21,6 +21,15 @@ protocol.registerSchemesAsPrivileged([
       bypassCSP: true,
       stream: true
     }
+  },
+  {
+    scheme: 'item-image',
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+      stream: true
+    }
   }
 ]);
 
@@ -52,6 +61,29 @@ app.once('ready', async () => {
     const urlWithoutProtocol = request.url.replace('local-image://', '');
     const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
     const filePath = decodeURIComponent(urlWithoutQuery);
+    return net.fetch(pathToFileURL(filePath).toString());
+  });
+
+  // アイテム画像用カスタムプロトコルハンドラー
+  protocol.handle('item-image', async (request) => {
+    const { getStore } = await import('./store.js');
+    const store = getStore();
+    const itemImageFolderPath = store.get('itemImageFolderPath');
+
+    if (!itemImageFolderPath) {
+      // Return 404 if no folder configured
+      return new Response('Item image folder not configured', { status: 404 });
+    }
+
+    // URL format: item-image://path/to/item_suffix.webp
+    const urlWithoutProtocol = request.url.replace('item-image://', '');
+    const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
+    const relativePath = decodeURIComponent(urlWithoutQuery);
+
+    // Construct the full file path
+    const path = await import('path');
+    const filePath = path.join(itemImageFolderPath, relativePath);
+
     return net.fetch(pathToFileURL(filePath).toString());
   });
 

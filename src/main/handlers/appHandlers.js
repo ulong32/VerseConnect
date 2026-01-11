@@ -18,11 +18,27 @@ export function setupAppHandlers(getMainWindow) {
     return result.filePaths[0];
   });
 
+  // ファイル選択ダイアログ
+  ipcMain.handle('select-file', async (event, options) => {
+    const mainWindow = getMainWindow();
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      defaultPath: options?.defaultPath,
+      properties: ['openFile'],
+      filters: options?.filters || [{ name: 'Images', extensions: ['webp', 'png', 'jpg', 'jpeg'] }]
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    return result.filePaths[0];
+  });
+
   // 設定を取得
   ipcMain.handle('get-settings', async () => {
     const store = getStore();
     return {
       folderPath: store.get('folderPath') || '',
+      itemImageFolderPath: store.get('itemImageFolderPath') || '',
       customCharacters: store.get('customCharacters') || [],
       customTags: store.get('customTags') || []
     };
@@ -39,6 +55,9 @@ export function setupAppHandlers(getMainWindow) {
     }
     if (settings.customTags !== undefined) {
       store.set('customTags', settings.customTags);
+    }
+    if (settings.itemImageFolderPath !== undefined) {
+      store.set('itemImageFolderPath', settings.itemImageFolderPath);
     }
     return true;
   });

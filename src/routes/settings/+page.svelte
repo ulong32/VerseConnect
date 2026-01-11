@@ -8,9 +8,10 @@
 	  removeCustomCharacter,
 	  removeCustomTag,
 	  selectFolder,
+	  selectItemImageFolder,
 	  settingsState
 	} from '$lib/stores/settings.svelte';
-	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, PlusIcon, TagIcon, UserPlusIcon, UsersIcon, XIcon } from '@lucide/svelte';
+	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, ImageIcon, PlusIcon, TagIcon, UserPlusIcon, UsersIcon, XIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let newCharacterInput = $state('');
@@ -25,6 +26,10 @@
 
 	async function handleSelectFolder() {
 		await selectFolder();
+	}
+
+	async function handleSelectItemImageFolder() {
+		await selectItemImageFolder();
 	}
 
 	async function handleAddCharacter() {
@@ -109,6 +114,26 @@
 						{#if settingsState.folderPath}
 							<span class="text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap flex-1" title={settingsState.folderPath}>
 								{settingsState.folderPath}
+							</span>
+						{:else}
+							<span class="text-gray-500 italic">フォルダが選択されていません</span>
+						{/if}
+					</div>
+
+					<!-- Item Image Folder -->
+					<div class="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
+						<button
+							class="px-4 py-2 bg-linear-to-r from-pink-500 to-rose-600 border-none rounded-lg text-white font-semibold cursor-pointer transition-all whitespace-nowrap hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-500/40"
+							onclick={handleSelectItemImageFolder}
+						>
+							<div class="flex items-center gap-2">
+								<ImageIcon class="size-5" />
+								アイテム画像フォルダ
+							</div>
+						</button>
+						{#if settingsState.itemImageFolderPath}
+							<span class="text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap flex-1" title={settingsState.itemImageFolderPath}>
+								{settingsState.itemImageFolderPath}
 							</span>
 						{:else}
 							<span class="text-gray-500 italic">フォルダが選択されていません</span>

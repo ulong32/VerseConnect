@@ -4,6 +4,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Folder selection dialog
   selectFolder: () => ipcRenderer.invoke('select-folder'),
 
+  // File selection dialog
+  selectFile: (options) => ipcRenderer.invoke('select-file', options),
+
   // Get images from folder
   getImages: (folderPath) => ipcRenderer.invoke('get-images', folderPath),
 
