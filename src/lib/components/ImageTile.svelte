@@ -15,7 +15,7 @@
 	let isHovering = $state(false);
 
 	// Max offset in pixels for parallax effect
-	const PARALLAX_INTENSITY = 4;
+	const PARALLAX_INTENSITY = 8;
 
 	function handleMouseMove(e: MouseEvent) {
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -74,12 +74,11 @@
 	<!-- Image -->
 	<div class="w-full overflow-hidden bg-gray-900 aspect-square">
 		<img
-			class="size-full object-cover transform-gpu transition-[scale] duration-300"
-			class:scale-105={isHovering}
+			class="size-full object-cover transform-gpu"
 			src={image.url}
 			alt={image.name}
 			loading="lazy"
-			style="translate: {transformX}px {transformY}px; transition: translate 75ms ease-out;"
+			style="transform: scale({isHovering ? 1.08 : 1}) translate({transformX}px, {transformY}px); transition: transform 150ms ease-out;"
 		/>
 	</div>
 
