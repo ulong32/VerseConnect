@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File explorer
   showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
 
+  // Copy image to clipboard
+  copyImageToClipboard: (filePath) => ipcRenderer.invoke('copy-image-to-clipboard', filePath),
+
   // Friend card
   saveFriendCard: (folderPath, filename, base64Data) => ipcRenderer.invoke('save-friend-card', folderPath, filename, base64Data),
 

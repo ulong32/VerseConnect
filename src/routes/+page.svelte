@@ -180,10 +180,27 @@
 		};
 	}
 
-	// Reset displayCount when filteredImages changes (but not while modal is open)
+	// Track previous filter state to detect real changes
+	let prevFilterKey = $state('');
+
+	// Reset displayCount only when filter criteria actually change
 	$effect(() => {
-		filteredImages;
-		if (!selectedImage) {
+		// Create a key that represents the current filter state
+		const filterKey = JSON.stringify({
+			chars: searchCharacters,
+			tags: searchTags,
+			item: searchItem,
+			sort: sortOrder,
+			friendCard: friendCardFilter,
+			noChar: noCharacterFilter,
+			noItem: noItemFilter,
+			noTag: noTagFilter,
+			exactChar: exactCharacterMatch,
+			exactTag: exactTagMatch
+		});
+
+		if (filterKey !== prevFilterKey) {
+			prevFilterKey = filterKey;
 			displayCount = BATCH_SIZE;
 		}
 	});

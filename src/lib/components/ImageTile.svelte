@@ -9,6 +9,31 @@
 
 	let { image, onclick, showInfo = true }: Props = $props();
 
+	// Parallax effect state
+	let transformX = $state(0);
+	let transformY = $state(0);
+	let isHovering = $state(false);
+
+	// Max offset in pixels for parallax effect
+	const PARALLAX_INTENSITY = 4;
+
+	function handleMouseMove(e: MouseEvent) {
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		// Calculate mouse position relative to center (-0.5 to 0.5)
+		const relativeX = (e.clientX - rect.left) / rect.width - 0.5;
+		const relativeY = (e.clientY - rect.top) / rect.height - 0.5;
+		// Move in opposite direction (inverse parallax)
+		transformX = -relativeX * PARALLAX_INTENSITY * 2;
+		transformY = -relativeY * PARALLAX_INTENSITY * 2;
+		isHovering = true;
+	}
+
+	function handleMouseLeave() {
+		transformX = 0;
+		transformY = 0;
+		isHovering = false;
+	}
+
 	// Get static folder path for item image
 	function getStaticItemImageSrc(item: string): string {
 		return `/item/${item}${ITEM_IMAGE_SUFFIX}`;
@@ -43,10 +68,19 @@
 	class="size-full rounded-lg overflow-hidden cursor-pointer bg-white/5 border-none p-0 transition-shadow duration-200 hover:shadow-lg hover:shadow-indigo-500/30 text-left relative group"
 	{onclick}
 	title={image.folder ? `${image.folder}/${image.name}` : image.name}
+	onmousemove={handleMouseMove}
+	onmouseleave={handleMouseLeave}
 >
 	<!-- Image -->
 	<div class="w-full overflow-hidden bg-gray-900 aspect-square">
-		<img class="size-full object-cover transform-gpu" src={image.url} alt={image.name} loading="lazy" />
+		<img
+			class="size-full object-cover transform-gpu transition-[scale] duration-300"
+			class:scale-105={isHovering}
+			src={image.url}
+			alt={image.name}
+			loading="lazy"
+			style="translate: {transformX}px {transformY}px; transition: translate 75ms ease-out;"
+		/>
 	</div>
 
 	{#if showInfo}
@@ -122,8 +156,4 @@
 		</div>
 	{/if}
 
-	<!-- Hover filename overlay -->
-	<div class="absolute top-0 left-0 right-0 p-2 bg-linear-to-b from-black/80 to-transparent text-white text-xs truncate opacity-0 group-hover:opacity-100 transition-opacity">
-		{image.name}
-	</div>
 </button>

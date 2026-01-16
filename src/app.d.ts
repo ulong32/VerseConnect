@@ -140,6 +140,7 @@ declare global {
 		getImageMetadata: (folderPath: string, imageName: string) => Promise<ImageMetadata | null>;
 		setImageMetadata: (folderPath: string, imageName: string, metadata: ImageMetadata) => Promise<boolean>;
 		showItemInFolder: (filePath: string) => Promise<boolean>;
+		copyImageToClipboard: (filePath: string) => Promise<{ success: boolean; error?: string }>;
 		showConfirmDialog: (options: DialogOptions) => Promise<boolean>;
 		saveFriendCard: (folderPath: string, filename: string, base64Data: string) => Promise<FriendCardResult>;
 		// Aipri API

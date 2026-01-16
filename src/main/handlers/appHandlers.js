@@ -1,4 +1,6 @@
-import { dialog, ipcMain } from 'electron';
+import { clipboard, dialog, ipcMain, nativeImage } from 'electron';
+import path from 'path';
+import fs from 'fs/promises';
 import { getStore } from '../store.js';
 
 /**
@@ -102,5 +104,22 @@ export function setupAppHandlers(getMainWindow) {
   ipcMain.on('window-close', () => {
     const mainWindow = getMainWindow();
     if (mainWindow) mainWindow.close();
+  });
+
+  // Copy image to clipboard
+  ipcMain.handle('copy-image-to-clipboard', async (event, filePath) => {
+    try {
+      // Read the file and convert to nativeImage
+      const buffer = await fs.readFile(filePath);
+      const image = nativeImage.createFromBuffer(buffer);
+      if (image.isEmpty()) {
+        return { success: false, error: '画像の読み込みに失敗しました' };
+      }
+      clipboard.writeImage(image);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to copy image to clipboard:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
   });
 }
