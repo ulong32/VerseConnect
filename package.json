@@ -4,6 +4,8 @@
 	"version": "0.0.1",
 	"type": "module",
 	"main": "src/main/index.js",
+	"author": "Ulong32",
+	"description": "An PriPhoto Management App",
 	"scripts": {
 		"dev": "set NODE_ENV=dev && npm run dev:all",
 		"dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"npm run dev:svelte\" \"npm run dev:electron\"",
