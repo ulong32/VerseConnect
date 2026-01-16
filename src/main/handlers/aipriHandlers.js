@@ -214,6 +214,7 @@ export function setupAipriHandlers() {
   /**
    * @typedef {{
    *   folderPath: string,
+   *   itemImageFolderPath: string,
    *   customCharacters: string[],
    *   customTags: string[],
    *   aipriAccounts: AipriAccount[],
