@@ -1,5 +1,5 @@
 {
-  "appId": "jp.aipri.verseconnect",
+  "appId": "net.ulong32.verseconnect",
   "productName": "VerseConnect",
   "directories": {
     "output": "dist"

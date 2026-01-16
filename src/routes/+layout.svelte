@@ -57,8 +57,8 @@
 	});
 </script>
 <header class="bg-surface-100-900 h-8 fixed w-full z-40 top-0" style="-webkit-app-region: drag;">
-	<nav class="flex items-center justify-between px-1 h-full">
-		<div class="ml-0.5 flex items-center gap-2">
+	<nav class="flex items-center justify-between h-full">
+		<div class="ml-1 flex items-center gap-2">
 			<img src={faviconPng} alt="VerseConnect" class="size-5 rounded-full transition-transform duration-500 hover:rotate-20 hover:scale-125 transform-gpu {isSpinning ? 'rotate-360' : ''} {skipTransition ? 'transition-none' : ''}">
 			<span class="font-medium text-md font-mplus-rounded text-pink-100">VerseConnect</span>
 		</div>
