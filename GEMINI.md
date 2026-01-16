@@ -21,14 +21,22 @@ It serves as an image viewer and manager, specifically tailored for "Aipri" (lik
     *   Uses `ipcMain`/`ipcRenderer` for communication.
 *   **Language:** TypeScript
 
+## Documentation
+
+For detailed technical documentation, please refer to the `docs/` directory:
+
+- **[Project Structure](docs/project_structure.md)**: High-level overview and directory tree.
+- **[Main Process](docs/main_process.md)**: Electron backend, IPC handlers, and services.
+- **[Renderer Process](docs/renderer_process.md)**: SvelteKit frontend, stores, and components.
+
 ## Architecture
 
-*   **Main Process (`src/electron.js`):**
-    *   Creates the browser window.
-    *   Handles IPC events (e.g., `select-folder`, `get-images`, `aipri-login`).
-    *   Manages application state and settings via `electron-store`.
-    *   Implements the "Aipri" logic (login, scraping, downloading).
-    *   Registers a custom protocol `local-image://` to serve local images securely.
+*   **Main Process (`src/main/`):**
+    *   **Entry Point:** `src/main/index.js`
+    *   **Handlers:** `src/main/handlers/` (IPC listeners for Aipri, Files, Window)
+    *   **Services:** `src/main/services/` (Business logic for File System, Scraping)
+    *   **Store:** `src/main/store.js` (Electron Store config)
+    *   **Window:** `src/main/windowManager.js`
 *   **Renderer Process (SvelteKit):**
     *   **Stores (`src/lib/stores/`):**
         *   `session.svelte.ts`: Manages user session and account state using Svelte 5 runes (`$state`).
