@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
 	import {
 	  addCustomCharacter,
 	  addCustomTag,
@@ -13,6 +13,14 @@
 	} from '$lib/stores/settings.svelte';
 	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, ImageIcon, PlusIcon, TagIcon, UserPlusIcon, UsersIcon, XIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { fly } from 'svelte/transition';
+
+	// Track if navigating to root for conditional out transition
+	let navigatingToRoot = $state(false);
+
+	beforeNavigate(({ to }) => {
+		navigatingToRoot = to?.url.pathname === '/';
+	});
 
 	let newCharacterInput = $state('');
 	let newTagInput = $state('');
@@ -65,15 +73,9 @@
 			handleAddTag();
 		}
 	}
-
-	async function reloadImages() {
-		if (!window.electronAPI || !settingsState.folderPath) return;
-		// Just trigger a reload by navigating back
-		goto('/');
-	}
 </script>
 
-<div class="bg-linear-to-br from-[#1a1a2e] to-[#16213e] p-6">
+<div class="bg-linear-to-br from-[#1a1a2e] to-[#16213e] p-6" in:fly={{ duration: 250, y: "10vh", opacity: 0}} out:fly={{ duration: navigatingToRoot ? 250 : 0, y: "10vh", opacity: 0}}>
 	<div class="max-w-2xl mx-auto">
 		<!-- Header -->
 		<div class="flex items-center align-center gap-4 mb-8">
