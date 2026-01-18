@@ -82,6 +82,13 @@
 		/>
 	</div>
 
+	<!-- If image has Friend Card -->
+	 {#if image.metadata?.friend_card}
+	 	<div class="absolute top-2 right-2 bg-pink-600/70 rounded-full px-2 py-1 text-xs text-white">
+			フレカ
+		</div>
+	 {/if}
+
 	{#if showInfo}
 		<!-- Info section (toggleable) -->
 		<div class="w-full bg-black/80 p-2">

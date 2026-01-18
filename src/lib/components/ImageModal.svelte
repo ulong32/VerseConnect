@@ -58,16 +58,26 @@
 	// Toggle between main image and friend card
 	let showFriendCard = $state(false);
 
-	// Compute friend card URL (properly encoded for Windows paths)
-	let friendCardUrl = $derived(
+	// Compute friend card path and URL
+	let friendCardPath = $derived(
 		currentMetadata.friend_card && folderPath
-			? `local-image://${encodeURIComponent(folderPath + '/friend_card/' + currentMetadata.friend_card)}`
+			? folderPath + '/friend_card/' + currentMetadata.friend_card
 			: null
 	);
 
-	// Current display image URL
+	let friendCardUrl = $derived(
+		friendCardPath
+			? `local-image://${encodeURIComponent(friendCardPath)}`
+			: null
+	);
+
+	// Current display image URL and path
 	let displayUrl = $derived(
 		showFriendCard && friendCardUrl ? friendCardUrl : selectedImage.url
+	);
+
+	let displayPath = $derived(
+		showFriendCard && friendCardPath ? friendCardPath : selectedImage.path
 	);
 
 	// Toggle UI visibility
@@ -93,6 +103,13 @@
 		imageScale = 1;
 		translateX = 0;
 		translateY = 0;
+	});
+
+	// Reset showFriendCard when the current image doesn't have friend_card metadata
+	$effect(() => {
+		if (!currentMetadata.friend_card && showFriendCard) {
+			showFriendCard = false;
+		}
 	});
 
 	// Computed transform style
@@ -161,16 +178,16 @@
 	}
 
 	function openInExplorer() {
-		if (window.electronAPI && selectedImage.path) {
-			window.electronAPI.showItemInFolder(selectedImage.path);
+		if (window.electronAPI && displayPath) {
+			window.electronAPI.showItemInFolder(displayPath);
 		}
 	}
 
 	let copyStatus = $state<'idle' | 'success' | 'error'>('idle');
 
 	async function copyToClipboard() {
-		if (window.electronAPI && selectedImage.path) {
-			const result = await window.electronAPI.copyImageToClipboard(selectedImage.path);
+		if (window.electronAPI && displayPath) {
+			const result = await window.electronAPI.copyImageToClipboard(displayPath);
 			if (result.success) {
 				copyStatus = 'success';
 				setTimeout(() => copyStatus = 'idle', 1200);
@@ -265,6 +282,9 @@
 							/>
 						</div>
 					{/if}
+					{#if showFriendCard}
+						<div class="mt-1 text-purple-400 text-xs">フレンドカード表示中</div>
+					{/if}
 					<div class="text-white text-base text-center flex items-center justify-center gap-2 w-full">
 						<span>{selectedImage.name}</span>
 						<button
@@ -297,10 +317,6 @@
 							</button>
 						{/if}
 					</div>
-
-					{#if showFriendCard}
-						<div class="mt-1 text-purple-400 text-xs">フレンドカード表示中</div>
-					{/if}
 					<!-- Metadata Display / Edit Button -->
 					<div class="mt-2 flex flex-wrap justify-center gap-2 items-center w-full">
 						{#if currentMetadata.characters.length > 0}

@@ -158,11 +158,11 @@
 
 			// Build result message
 			if (downloadedCount === 0 && skippedCount === photos.length) {
-				importResult = { success: true, message: '新しい写真はありませんでした（すべて既存）' };
+				importResult = { success: true, message: 'すべて既存のためスキップしました' };
 			} else if (errorCount > 0) {
 				importResult = { success: false, message: `${downloadedCount}枚をインポート、${skippedCount}枚をスキップ、${errorCount}枚がエラー` };
 			} else {
-				importResult = { success: true, message: `${downloadedCount}枚をインポートしました${skippedCount > 0 ? `（${skippedCount}枚は既存のためスキップ）` : ''}` };
+				importResult = { success: true, message: `${downloadedCount}枚をインポートしました${skippedCount > 0 ? `（${skippedCount}枚既存）` : ''}` };
 			}
 		} catch (error) {
 			importResult = { success: false, message: `エラーが発生しました: ${String(error)}` };
