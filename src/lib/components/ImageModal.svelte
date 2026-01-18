@@ -270,6 +270,7 @@
 								{currentMetadata}
 								{newCharacterInput}
 								{newTagInput}
+								{folderPath}
 								{ontogglecharacter}
 								{ontoggletag}
 								{onaddcharacter}

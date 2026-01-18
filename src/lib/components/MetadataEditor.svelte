@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ImageIcon, TagIcon } from '@lucide/svelte';
+	import { CheckIcon, ImageIcon, TagIcon, UploadIcon } from '@lucide/svelte';
 	import { ITEM_IMAGE_SUFFIX, settingsState } from '$lib/stores/settings.svelte';
 
 	interface Props {
@@ -8,6 +8,7 @@
 		currentMetadata: ImageMetadata;
 		newCharacterInput: string;
 		newTagInput: string;
+		folderPath?: string;
 		ontogglecharacter: (char: string) => void;
 		ontoggletag: (tag: string) => void;
 		onaddcharacter: () => void;
@@ -25,6 +26,7 @@
 		currentMetadata,
 		newCharacterInput,
 		newTagInput,
+		folderPath,
 		ontogglecharacter,
 		ontoggletag,
 		onaddcharacter,
@@ -37,6 +39,44 @@
 	}: Props = $props();
 
 	let itemImageError = $state(false);
+	let isDragOver = $state(false);
+
+	// Friend card preview URL
+	let friendCardPreviewUrl = $derived(
+		currentMetadata.friend_card && folderPath
+			? `local-image://${encodeURIComponent(folderPath + '/friend_card/' + currentMetadata.friend_card)}`
+			: null
+	);
+
+	// Handle drag events
+	function handleDragOver(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.dataTransfer?.types.includes('Files')) {
+			isDragOver = true;
+		}
+	}
+
+	function handleDragLeave(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		isDragOver = false;
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		isDragOver = false;
+
+		const files = e.dataTransfer?.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			// Check if it's an image file
+			if (file.type.startsWith('image/')) {
+				onselectfriendcard(file);
+			}
+		}
+	}
 
 	// Get static folder path for item image
 	function getStaticItemImageSrc(item: string): string {
@@ -235,15 +275,50 @@
 		</div>
 	</div>
 
-	<!-- Friend Card File Input -->
-	<div class="mb-4">
+	<!-- Friend Card File Input with D&D -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="mb-4 relative"
+		ondragover={handleDragOver}
+		ondragleave={handleDragLeave}
+		ondrop={handleDrop}
+	>
 		<span class="block text-white text-sm font-medium mb-2">フレンドカード</span>
-		<div class="flex items-center gap-2">
-			<label class="flex-1 flex items-center gap-2 px-3 py-2 bg-white/10 text-gray-300 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-colors">
-				<ImageIcon class="size-4" />
-				<span class="text-sm truncate">
-					{currentMetadata.friend_card || 'ファイルを選択...'}
-				</span>
+		<div
+			class="flex items-stretch gap-3 p-3 min-h-24 rounded-lg border-2 border-dashed transition-all {isDragOver
+				? 'border-purple-500 bg-purple-500/20'
+				: 'border-white/20 bg-white/5 hover:border-white/40'}"
+		>
+			<!-- Preview Area -->
+			<div class="shrink-0 w-20 flex items-center justify-center">
+				{#if friendCardPreviewUrl}
+					<img
+						src={friendCardPreviewUrl}
+						alt="フレンドカードプレビュー"
+						class="max-w-full max-h-20 object-contain rounded"
+					/>
+				{:else}
+					<div class="size-16 bg-gray-700/50 rounded flex items-center justify-center">
+						<ImageIcon class="size-6 text-gray-600" />
+					</div>
+				{/if}
+			</div>
+
+			<!-- Drop Zone / File Select -->
+			<label class="flex-1 flex flex-col items-center justify-center gap-2 cursor-pointer">
+				{#if isDragOver}
+					<UploadIcon class="size-6 text-purple-400 animate-bounce" />
+					<span class="text-purple-400 text-sm">ここにドロップ</span>
+				{:else if currentMetadata.friend_card}
+					<div class="flex items-center gap-1 text-green-400">
+						<CheckIcon class="size-4" />
+						<span class="text-sm truncate max-w-32">{currentMetadata.friend_card}</span>
+					</div>
+					<span class="text-gray-500 text-xs">クリックまたはD&Dで変更</span>
+				{:else}
+					<UploadIcon class="size-5 text-gray-400" />
+					<span class="text-gray-400 text-sm">クリックまたはD&Dで選択</span>
+				{/if}
 				<input
 					type="file"
 					accept="image/*"
@@ -251,9 +326,6 @@
 					onchange={handleFileSelect}
 				/>
 			</label>
-			{#if currentMetadata.friend_card}
-				<span class="text-green-400 text-sm">✓</span>
-			{/if}
 		</div>
 	</div>
 
