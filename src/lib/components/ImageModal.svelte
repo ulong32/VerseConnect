@@ -207,9 +207,11 @@
 
 
 <div
-	class="fixed inset-0 bg-black/95 flex items-start justify-center z-40 animate-fade-in overflow-y-auto"
-	onclick={onclose}
+	class="fixed inset-0 bg-black/95 flex items-start justify-center z-40 overflow-y-auto"
+	transition:fade={{ duration: 100 }}
+	onclick={() => !showMetadataEditor && onclose()}
 	onkeydown={(e) => {
+		if (showMetadataEditor) return; // Block navigation and close while editing
 		if (e.key === 'Escape') onclose();
 		if (e.key === 'ArrowLeft' && selectedIndex > 0) {
 			e.preventDefault();
@@ -260,10 +262,10 @@
 			<div
 				class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur rounded-lg transition-colors overflow-hidden w-fit z-50"
 			>
-				<div class="w-max mx-auto flex flex-col items-center p-2">
+				<div class="w-max mx-auto flex flex-col items-center p-2 max-h-[calc(100vh-32px)]">
 					<!-- Metadata Editor Panel -->
 					{#if showMetadataEditor}
-						<div transition:slide={{ duration: 200, }}>
+						<div transition:slide={{ duration: 200}} class="overflow-y-auto">
 							<MetadataEditor
 								{allCharacters}
 								{allTags}
@@ -289,7 +291,7 @@
 					<div class="text-white text-base text-center flex items-center justify-center gap-2 w-full">
 						<span>{selectedImage.name}</span>
 						<button
-						class="p-1 hover:bg-white/20 rounded transition-colors {copyStatus === 'success' ? 'text-green-400' : copyStatus === 'error' ? 'text-red-400' : ''}"
+						class="p-1 hover:bg-white/20 rounded transition-colors focus:outline-none {copyStatus === 'success' ? 'text-green-400' : copyStatus === 'error' ? 'text-red-400' : ''}"
 						onclick={copyToClipboard}
 						title="画像をコピー"
 					>
@@ -302,7 +304,7 @@
 						{/if}
 					</button>
 						<button
-							class="p-1 hover:bg-white/20 rounded transition-colors"
+							class="p-1 hover:bg-white/20 rounded transition-colors focus:outline-none"
 							onclick={openInExplorer}
 							title="エクスプローラで開く"
 						>
@@ -310,7 +312,7 @@
 						</button>
 						{#if friendCardUrl}
 							<button
-								class="p-1 hover:bg-white/20 rounded transition-colors {showFriendCard ? 'bg-purple-600/50' : ''}"
+								class="p-1 hover:bg-white/20 rounded transition-colors focus:outline-none {showFriendCard ? 'bg-purple-600/50' : ''}"
 								onclick={toggleFriendCard}
 								title="フレンドカードを表示"
 							>
@@ -336,7 +338,7 @@
 							{/each}
 						{/if}
 						<button
-							class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors"
+							class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors focus:outline-none"
 							onclick={ontoggleeditor}
 						>
 						{#if showMetadataEditor}
@@ -358,16 +360,18 @@
 			<!-- Navigation buttons -->
 			{#if selectedIndex > 0}
 				<button
-					class="fixed left-6 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all"
+					class="fixed left-6 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none"
 					onclick={onprev}
+					disabled={showMetadataEditor}
 				>
 					<ArrowLeftIcon class="size-6" />
 				</button>
 			{/if}
 			{#if selectedIndex < totalImages - 1}
 				<button
-					class="fixed right-6 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all"
+					class="fixed right-6 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none"
 					onclick={onnext}
+					disabled={showMetadataEditor}
 				>
 					<ArrowRightIcon class="size-6" />
 				</button>
@@ -375,8 +379,9 @@
 
 			<!-- Close button -->
 			<button
-				class="fixed top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all"
+				class="fixed top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none"
 				onclick={onclose}
+				disabled={showMetadataEditor}
 			>
 				<XIcon class="size-6" />
 			</button>
@@ -389,7 +394,7 @@
 
 		<!-- UI Toggle Button -->
 		<button
-			class="fixed bottom-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all z-50 group"
+			class="fixed bottom-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur transition-all z-50 group focus:outline-none"
 			onclick={toggleUI}
 			title={showUI ? "UIを非表示" : "UIを表示"}
 		>

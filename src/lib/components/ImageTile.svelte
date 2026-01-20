@@ -74,7 +74,7 @@
 	<!-- Image -->
 	<div class="w-full overflow-hidden bg-gray-900 aspect-square">
 		<img
-			class="size-full object-cover transform-gpu"
+			class="size-full object-cover transform-gpu hover:brightness-103"
 			src={image.url}
 			alt={image.name}
 			loading="lazy"
