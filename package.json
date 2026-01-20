@@ -27,7 +27,7 @@
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.50.0",
-		"@sveltejs/mcp": "^0.1.18",
+		"@sveltejs/mcp": "^0.1.19",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/vite": "^4.1.18",
@@ -36,12 +36,12 @@
 		"concurrently": "^9.2.1",
 		"cross-env": "^10.1.0",
 		"electron": "^39.2.7",
-		"electron-builder": "^26.4.1",
+		"electron-builder": "^26.5.0",
 		"electron-packager": "^17.1.2",
 		"electron-reloader": "^1.2.3",
-		"electron-updater": "^6.8.0",
+		"electron-updater": "^6.8.1",
 		"playwright": "^1.57.0",
-		"svelte": "^5.46.4",
+		"svelte": "^5.47.1",
 		"svelte-check": "^4.3.5",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
@@ -56,9 +56,6 @@
 		"electron-serve": "^3.0.0",
 		"electron-store": "^11.0.2",
 		"electron-window-state": "^5.0.3"
-	},
-	"overrides": {
-		"cookie": "0.7.2"
 	},
 	"volta": {
 		"node": "24.13.0"
