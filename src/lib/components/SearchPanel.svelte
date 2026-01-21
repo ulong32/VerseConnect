@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, CircleSlash2Icon, EqualIcon, SearchIcon, ShirtIcon, SquareCheckIcon, TagIcon, UserRoundIcon, UsersIcon, UserXIcon } from '@lucide/svelte';
+	import { ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, CircleSlash2Icon, EqualIcon, SearchIcon, ShirtIcon, SquareCheckIcon, TagIcon, UserRoundIcon, UserRoundCogIcon, UsersIcon, UserXIcon } from '@lucide/svelte';
+	import { getPresetCharacters, getCustomCharacters } from '$lib/stores/settings.svelte';
 	interface Props {
-		characters: string[];
 		selectedCharacters: string[];
 		tags: string[];
 		selectedTags: string[];
@@ -27,7 +27,7 @@
 		onexacttagmatchchange: (value: boolean) => void;
 	}
 
-	let { characters, selectedCharacters, tags, selectedTags, searchItem, sortOrder, friendCardFilter, isMultiSelectMode, noCharacterFilter, noItemFilter, noTagFilter, exactCharacterMatch, exactTagMatch, oncharacterselect, ontagselect, onitemsearch, onsortchange, onfriendcardfilterchange, ontogglemultiselect, onnocharacterfilterchange, onnoitemfilterchange, onnotagfilterchange, onexactcharactermatchchange, onexacttagmatchchange }: Props = $props();
+	let { selectedCharacters, tags, selectedTags, searchItem, sortOrder, friendCardFilter, isMultiSelectMode, noCharacterFilter, noItemFilter, noTagFilter, exactCharacterMatch, exactTagMatch, oncharacterselect, ontagselect, onitemsearch, onsortchange, onfriendcardfilterchange, ontogglemultiselect, onnocharacterfilterchange, onnoitemfilterchange, onnotagfilterchange, onexactcharactermatchchange, onexacttagmatchchange }: Props = $props();
 
 	function toggleCharacter(char: string) {
 		if (selectedCharacters.includes(char)) {
@@ -60,6 +60,10 @@
 	}
 
 	let hasFilter = $derived(selectedCharacters.length > 0 || selectedTags.length > 0 || searchItem.length > 0 || friendCardFilter !== 'all' || noCharacterFilter || noItemFilter || noTagFilter);
+
+	// Split characters into preset and custom
+	let presetCharacters = getPresetCharacters();
+	let customCharacters = getCustomCharacters();
 
 	function clearAll() {
 		oncharacterselect([]);
@@ -153,31 +157,53 @@
 		{/if}
 	</div>
 
-	<!-- Character Filter -->
-	<div class="flex items-center gap-2 mb-2 flex-wrap">
-		<UserRoundIcon class="size-4 text-gray-500 shrink-0" />
-		{#each characters as char}
+	<!-- Character Filter (Preset) -->
+	{#if presetCharacters.length > 0}
+		<div class="flex items-center gap-2 mb-2 flex-wrap">
+			<UserRoundIcon class="size-4 text-gray-500 shrink-0" />
+			{#each presetCharacters as char}
+				<button
+					class="px-2 py-0.5 text-xs rounded-full transition-all {selectedCharacters.includes(char)
+						? 'bg-purple-600 text-white'
+						: 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+					onclick={() => toggleCharacter(char)}
+				>
+					{char}
+				</button>
+			{/each}
+		</div>
+	{/if}
+
+	<!-- Character Filter (Custom) -->
+	{#if customCharacters.length > 0}
+		<div class="flex items-center gap-2 mb-2 flex-wrap">
+			<UserRoundCogIcon class="size-4 text-gray-500 shrink-0" />
+			{#each customCharacters as char}
+				<button
+					class="px-2 py-0.5 text-xs rounded-full transition-all {selectedCharacters.includes(char)
+						? 'bg-purple-600 text-white'
+						: 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+					onclick={() => toggleCharacter(char)}
+				>
+					{char}
+				</button>
+			{/each}
+		</div>
+	{/if}
+
+	<!-- Exact Character Match Toggle -->
+	{#if selectedCharacters.length > 0}
+		<div class="flex items-center gap-2 mb-2">
 			<button
-				class="px-2 py-0.5 text-xs rounded-full transition-all {selectedCharacters.includes(char)
-					? 'bg-purple-600 text-white'
-					: 'bg-white/10 text-gray-400 hover:bg-white/20'}"
-				onclick={() => toggleCharacter(char)}
-			>
-				{char}
-			</button>
-		{/each}
-		<!-- Exact Match Toggle -->
-		{#if selectedCharacters.length > 0}
-			<button
-				class="px-2 py-0.5 text-xs rounded-full transition-colors flex items-center gap-1 ml-2 {exactCharacterMatch ? 'bg-yellow-600/70 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
+				class="px-2 py-0.5 text-xs rounded-full transition-colors flex items-center gap-1 {exactCharacterMatch ? 'bg-yellow-600/70 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'}"
 				onclick={() => onexactcharactermatchchange(!exactCharacterMatch)}
 				title="完全一致：選択したキャラクターのみが写っている画像を表示"
 			>
 				<EqualIcon class="size-3" />
 				完全一致
 			</button>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	<!-- Tag Filter -->
 	{#if tags.length > 0}

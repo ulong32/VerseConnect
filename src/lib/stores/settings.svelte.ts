@@ -17,6 +17,16 @@ export function getAllCharacters(): string[] {
   return [...CHARACTER_PRESETS, ...settingsState.customCharacters];
 }
 
+// Get preset characters only
+export function getPresetCharacters(): string[] {
+  return [...CHARACTER_PRESETS];
+}
+
+// Get custom characters only
+export function getCustomCharacters(): string[] {
+  return [...settingsState.customCharacters];
+}
+
 // Get all tags - exported as getter function
 export function getAllTags(): string[] {
   return [...settingsState.customTags];

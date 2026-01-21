@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { CheckIcon, ImageIcon, TagIcon, UploadIcon } from '@lucide/svelte';
-	import { ITEM_IMAGE_SUFFIX, settingsState } from '$lib/stores/settings.svelte';
+	import { CheckIcon, ImageIcon, TagIcon, UploadIcon, UserRoundIcon, UserRoundCogIcon } from '@lucide/svelte';
+	import { ITEM_IMAGE_SUFFIX, settingsState, getPresetCharacters, getCustomCharacters } from '$lib/stores/settings.svelte';
 
 	interface Props {
-		allCharacters: string[];
 		allTags: string[];
 		currentMetadata: ImageMetadata;
 		newCharacterInput: string;
@@ -21,7 +20,6 @@
 	}
 
 	let {
-		allCharacters,
 		allTags,
 		currentMetadata,
 		newCharacterInput,
@@ -47,6 +45,10 @@
 			? `local-image://${encodeURIComponent(folderPath + '/friend_card/' + currentMetadata.friend_card)}`
 			: null
 	);
+
+	// Split characters into preset and custom
+	let presetCharacters = getPresetCharacters();
+	let customCharactersFiltered = getCustomCharacters();
 
 	// Handle drag events
 	function handleDragOver(e: DragEvent) {
@@ -172,18 +174,41 @@
 	<!-- Character Selection -->
 	<div class="mb-4">
 		<span class="block text-white text-sm font-medium mb-2">キャラクター</span>
-		<div class="flex flex-wrap gap-2">
-			{#each allCharacters as char}
-				<button
-					class="px-3 py-1.5 rounded-full text-sm transition-all {currentMetadata.characters.includes(char)
-						? 'bg-purple-600 text-white'
-						: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
-					onclick={() => ontogglecharacter(char)}
-				>
-					{char}
-				</button>
-			{/each}
-		</div>
+		
+		<!-- Preset Characters -->
+		{#if presetCharacters.length > 0}
+			<div class="flex items-center gap-2 mb-2 flex-wrap">
+				<UserRoundIcon class="size-4 text-gray-500 shrink-0" />
+				{#each presetCharacters as char}
+					<button
+						class="px-3 py-1.5 rounded-full text-sm transition-all {currentMetadata.characters.includes(char)
+							? 'bg-purple-600 text-white'
+							: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
+						onclick={() => ontogglecharacter(char)}
+					>
+						{char}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Custom Characters -->
+		{#if customCharactersFiltered.length > 0}
+			<div class="flex items-center gap-2 mb-2 flex-wrap">
+				<UserRoundCogIcon class="size-4 text-gray-500 shrink-0" />
+				{#each customCharactersFiltered as char}
+					<button
+						class="px-3 py-1.5 rounded-full text-sm transition-all {currentMetadata.characters.includes(char)
+							? 'bg-purple-600 text-white'
+							: 'bg-white/10 text-gray-300 hover:bg-white/20'}"
+						onclick={() => ontogglecharacter(char)}
+					>
+						{char}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
 		<!-- Add Custom Character -->
 		<div class="mt-3 flex gap-2">
 			<input

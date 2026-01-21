@@ -5,6 +5,7 @@
 	import { Avatar, Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
 	import './layout.css';
 	import LuminaPng from './lumina.png';
+	import { fade } from 'svelte/transition';
 	let { children } = $props();
 
 	// Konami Code: ↑↑↓↓←→←→BA

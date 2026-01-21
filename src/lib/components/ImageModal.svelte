@@ -267,7 +267,6 @@
 					{#if showMetadataEditor}
 						<div transition:slide={{ duration: 200}} class="overflow-y-auto">
 							<MetadataEditor
-								{allCharacters}
 								{allTags}
 								{currentMetadata}
 								{newCharacterInput}

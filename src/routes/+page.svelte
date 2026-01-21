@@ -13,6 +13,7 @@
 	} from '$lib/stores/settings.svelte';
 	import { CheckIcon, EyeIcon, EyeOffIcon, RotateCcwIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { fly } from 'svelte/transition';
 
 	// State
 	let images: ImageInfo[] = $state([]);
@@ -451,7 +452,6 @@
 	<!-- Search Panel -->
 	{#if images.length > 0}
 		<SearchPanel
-			characters={getAllCharacters()}
 			selectedCharacters={searchCharacters}
 			tags={getAllTags()}
 			selectedTags={searchTags}
@@ -509,7 +509,7 @@
 
 
 	<!-- Image Grid -->
-	<div class="flex-1 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] auto-rows-auto gap-3 p-2 content-start">
+	<div class="flex-1 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] auto-rows-auto gap-3 p-2 content-start" in:fly={{duration: 500, y: "10vh", opacity: 0}}>
 		{#if isLoading}
 			<div class="col-span-full flex items-center justify-center h-48 text-gray-500 text-xl">読み込み中...</div>
 		{:else if images.length === 0}
