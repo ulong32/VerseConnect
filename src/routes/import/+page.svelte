@@ -103,7 +103,7 @@
 		importProgress = { current: 0, total: 0, skipped: 0 };
 
 		try {
-			// Fetch photo list
+			// Fetch photo list (backend handles session retry automatically)
 			const fetchResult = await window.electronAPI.aipriFetchPhotos(selectedYm);
 
 			if (!fetchResult.success || !fetchResult.photos) {

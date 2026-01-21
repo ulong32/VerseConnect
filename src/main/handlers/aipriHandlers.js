@@ -167,37 +167,9 @@ export function setupAipriHandlers() {
     // Set as active
     store.set('aipriActiveAccountName', name);
 
-    // Check if session is valid locally first (simple check)
-    if (!account.sessionCookie || !account.sessionCookie.includes('MYPAPSSID=')) {
-      // No session, try to re-login
-      return await performLoginAndUpdateAccount(store, account, accounts);
-    }
-
-    // Verify existing session with server
-    const verifyResult = await aipriService.verifySession(account.sessionCookie);
-
-    if (verifyResult.valid) {
-      // Session is valid
-      // Update profile image if changed
-      if (verifyResult.profileImageUrl) {
-        const profileImagePath = await aipriService.downloadAndSaveProfileImage(verifyResult.profileImageUrl, name, account.sessionCookie);
-        if (profileImagePath) {
-          const updatedAccounts = accounts.map(acc =>
-            acc.name === name ? { ...acc, profileImagePath } : acc
-          );
-          store.set('aipriAccounts', updatedAccounts);
-        }
-        return { success: true, profileImageUrl: verifyResult.profileImageUrl };
-      }
-      return { success: true };
-    } else {
-      // Session invalid/expired, re-login
-      if (verifyResult.reason === 'セッションが期限切れです' || verifyResult.reason === 'セッションがありません') {
-        // Attempt re-login
-        return await performLoginAndUpdateAccount(store, account, accounts);
-      }
-      return { success: false, error: verifyResult.reason };
-    }
+    // Always perform fresh login to ensure valid session for API calls
+    // (verifySession checking /mypage doesn't guarantee API session validity)
+    return await performLoginAndUpdateAccount(store, account, accounts);
   });
 
   /**

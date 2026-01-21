@@ -293,12 +293,31 @@ export const performLogin = async (credentials) => {
 /**
  * Fetch photos from myphoto-list API
  * @param {string} targetYm YYYYMM format
- * @returns {Promise<{success: boolean, photos?: any[], error?: string}>}
+ * @param {boolean} isRetry Whether this is a retry attempt
+ * @returns {Promise<{success: boolean, photos?: any[], error?: string, reloggedIn?: boolean}>}
  */
-export const fetchPhotos = async (targetYm) => {
-  const sessionCookies = getActiveSessionCookie();
+export const fetchPhotos = async (targetYm, isRetry = false) => {
+  const store = getStore();
+  const activeAccountName = store.get('aipriActiveAccountName');
+
+  if (!activeAccountName) {
+    return { success: false, error: 'アクティブなアカウントがありません。' };
+  }
+
+  const accounts = store.get('aipriAccounts') || [];
+  const account = accounts.find(acc => acc.name === activeAccountName);
+
+  if (!account) {
+    return { success: false, error: 'アカウントが見つかりません。' };
+  }
+
+  const sessionCookies = account.sessionCookie;
 
   if (!sessionCookies) {
+    // No session, try to login
+    if (!isRetry) {
+      return await performReloginAndRetry(store, account, accounts, targetYm);
+    }
     return { success: false, error: 'セッションがありません。ログインしてください。' };
   }
 
@@ -326,6 +345,15 @@ export const fetchPhotos = async (targetYm) => {
 
     const result = await response.json();
 
+    // Check for session expired error (code 90)
+    if (result.code === '90') {
+      if (!isRetry) {
+        return await performReloginAndRetry(store, account, accounts, targetYm);
+      } else {
+        return { success: false, error: 'セッションが期限切れです。再ログインに失敗しました。' };
+      }
+    }
+
     if (result.code !== '00') {
       return { success: false, error: result.message || 'APIエラーが発生しました' };
     }
@@ -339,6 +367,40 @@ export const fetchPhotos = async (targetYm) => {
     return { success: false, error: `通信エラー: ${String(error)}` };
   }
 };
+
+/**
+ * Helper function to perform re-login and retry fetchPhotos
+ * @param {ReturnType<typeof import('../store.js').getStore>} store
+ * @param {{cardId: string, name: string, birthdayM: string, birthdayD: string, sessionCookie: string | null}} account
+ * @param {Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>} accounts
+ * @param {string} targetYm
+ * @returns {Promise<{success: boolean, photos?: any[], error?: string, reloggedIn?: boolean}>}
+ */
+async function performReloginAndRetry(store, account, accounts, targetYm) {
+  const loginResult = await performLogin({
+    cardId: account.cardId,
+    name: account.name,
+    birthdayM: account.birthdayM,
+    birthdayD: account.birthdayD
+  });
+
+  if (!loginResult.success) {
+    return { success: false, error: `再ログインに失敗しました: ${loginResult.error}` };
+  }
+
+  // Update account with new session
+  const updatedAccounts = accounts.map(acc =>
+    acc.name === account.name
+      ? { ...acc, sessionCookie: loginResult.cookies || null }
+      : acc
+  );
+  store.set('aipriAccounts', updatedAccounts);
+
+  // Retry fetch with new session
+  const retryResult = await fetchPhotos(targetYm, true);
+
+  return { ...retryResult, reloggedIn: true };
+}
 
 /**
  * Download a single photo and save to folder
