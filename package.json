@@ -1,7 +1,7 @@
 {
 	"name": "verseconnect",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"type": "module",
 	"main": "src/main/index.js",
 	"author": "Ulong32",
