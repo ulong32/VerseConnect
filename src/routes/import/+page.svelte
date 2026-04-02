@@ -8,7 +8,14 @@
 	  updateAccount,
 	  sessionState
 	} from '$lib/stores/session.svelte';
-	import { ArrowLeftIcon, CircleAlertIcon, CircleCheckBigIcon, DownloadIcon, LoaderIcon, LogInIcon, LogOutIcon, XIcon } from '@lucide/svelte';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
+	import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import LoaderIcon from '@lucide/svelte/icons/loader';
+	import LogInIcon from '@lucide/svelte/icons/log-in';
+	import LogOutIcon from '@lucide/svelte/icons/log-out';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import { onMount } from 'svelte';
     import { fly } from 'svelte/transition';

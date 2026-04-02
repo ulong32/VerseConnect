@@ -7,8 +7,8 @@
   "type": "module",
   "main": "src/main/index.js",
   "scripts": {
-    "dev": "set NODE_ENV=dev && npm run dev:all",
-    "dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"npm run dev:svelte\" \"npm run dev:electron\"",
+    "dev": "set NODE_ENV=dev && vp run dev:all",
+    "dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"vp run dev:svelte\" \"vp run dev:electron\"",
     "dev:svelte": "vp dev",
     "dev:electron": "electron src/main/index.js",
     "build": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron",
@@ -22,14 +22,13 @@
     "test": "npm run test:unit -- --run"
   },
   "dependencies": {
-    "@lucide/svelte": "^1.7.0",
-    "adm-zip": "^0.5.17",
     "electron-context-menu": "^4.1.2",
     "electron-serve": "^3.0.1",
     "electron-store": "^11.0.2",
     "electron-window-state": "^5.0.3"
   },
   "devDependencies": {
+    "@lucide/svelte": "^1.7.0",
     "@skeletonlabs/skeleton": "^4.14.0",
     "@skeletonlabs/skeleton-svelte": "^4.14.0",
     "@sveltejs/adapter-static": "^3.0.10",
@@ -38,7 +37,6 @@
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
-    "@types/adm-zip": "^0.5.8",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "^41.1.1",

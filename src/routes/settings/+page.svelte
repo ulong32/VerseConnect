@@ -11,7 +11,15 @@
 	  selectItemImageFolder,
 	  settingsState
 	} from '$lib/stores/settings.svelte';
-	import { ArrowLeftIcon, FolderIcon, FolderOpenIcon, ImageIcon, PlusIcon, TagIcon, UserPlusIcon, UsersIcon, XIcon } from '@lucide/svelte';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import FolderIcon from '@lucide/svelte/icons/folder';
+	import FolderOpenIcon from '@lucide/svelte/icons/folder-open';
+	import ImageIcon from '@lucide/svelte/icons/image';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
+	import UsersIcon from '@lucide/svelte/icons/users';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 

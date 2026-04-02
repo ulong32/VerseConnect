@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { CheckIcon, ImageIcon, TagIcon, UploadIcon, UserRoundIcon, UserRoundCogIcon } from '@lucide/svelte';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import ImageIcon from '@lucide/svelte/icons/image';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import UploadIcon from '@lucide/svelte/icons/upload';
+	import UserRoundIcon from '@lucide/svelte/icons/user-round';
+	import UserRoundCogIcon from '@lucide/svelte/icons/user-round-cog';
 	import { ITEM_IMAGE_SUFFIX, settingsState, getPresetCharacters, getCustomCharacters } from '$lib/stores/settings.svelte';
 
 	interface Props {

@@ -1,5 +1,17 @@
 <script lang="ts">
-	import { ArrowDown01Icon, ArrowUp01Icon, ChevronsUpDownIcon, CircleSlash2Icon, EqualIcon, SearchIcon, ShirtIcon, SquareCheckIcon, TagIcon, UserRoundIcon, UserRoundCogIcon, UsersIcon, UserXIcon } from '@lucide/svelte';
+	import ArrowDown01Icon from '@lucide/svelte/icons/arrow-down-01';
+	import ArrowUp01Icon from '@lucide/svelte/icons/arrow-up-01';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import CircleSlash2Icon from '@lucide/svelte/icons/circle-slash-2';
+	import EqualIcon from '@lucide/svelte/icons/equal';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import ShirtIcon from '@lucide/svelte/icons/shirt';
+	import SquareCheckIcon from '@lucide/svelte/icons/square-check';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import UserRoundIcon from '@lucide/svelte/icons/user-round';
+	import UserRoundCogIcon from '@lucide/svelte/icons/user-round-cog';
+	import UsersIcon from '@lucide/svelte/icons/users';
+	import UserXIcon from '@lucide/svelte/icons/user-x';
 	import { getPresetCharacters, getCustomCharacters } from '$lib/stores/settings.svelte';
 	interface Props {
 		selectedCharacters: string[];

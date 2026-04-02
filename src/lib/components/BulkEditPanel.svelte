@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { addCustomCharacter } from '$lib/stores/settings.svelte';
-	import { PlusIcon, SquareCheckIcon, XIcon } from '@lucide/svelte';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import SquareCheckIcon from '@lucide/svelte/icons/square-check';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 
 	interface Props {

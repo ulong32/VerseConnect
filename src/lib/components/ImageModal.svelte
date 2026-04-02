@@ -1,5 +1,15 @@
 <script lang="ts">
-	import { ArrowLeftIcon, ArrowLeftRightIcon, ArrowRightIcon, CopyCheckIcon, CopyIcon, EyeIcon, EyeOffIcon, FolderOpenIcon, PenIcon, TagIcon, XIcon } from '@lucide/svelte';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import ArrowLeftRightIcon from '@lucide/svelte/icons/arrow-left-right';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import CopyCheckIcon from '@lucide/svelte/icons/copy-check';
+	import CopyIcon from '@lucide/svelte/icons/copy';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import FolderOpenIcon from '@lucide/svelte/icons/folder-open';
+	import PenIcon from '@lucide/svelte/icons/pen';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { slide, fade } from 'svelte/transition';
 	import MetadataEditor from './MetadataEditor.svelte';
 

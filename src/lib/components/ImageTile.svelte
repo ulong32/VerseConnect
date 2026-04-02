@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { CalendarIcon, FolderClosedIcon, HashIcon, ImageIcon, ShirtIcon, TagIcon, UserRoundIcon } from '@lucide/svelte';
+	import CalendarIcon from '@lucide/svelte/icons/calendar';
+	import FolderClosedIcon from '@lucide/svelte/icons/folder-closed';
+	import HashIcon from '@lucide/svelte/icons/hash';
+	import ImageIcon from '@lucide/svelte/icons/image';
+	import ShirtIcon from '@lucide/svelte/icons/shirt';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import { ITEM_IMAGE_SUFFIX, settingsState } from '$lib/stores/settings.svelte';
 	interface Props {
 		image: ImageInfo;

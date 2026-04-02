@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import faviconPng from '$lib/assets/favicon.png';
-	import { ArrowUpIcon, CopyrightIcon, DownloadIcon, MinusIcon, SettingsIcon, SquareIcon, XIcon } from '@lucide/svelte';
+	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import CopyrightIcon from '@lucide/svelte/icons/copyright';
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import MinusIcon from '@lucide/svelte/icons/minus';
+	import SettingsIcon from '@lucide/svelte/icons/settings';
+	import SquareIcon from '@lucide/svelte/icons/square';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { Avatar, Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
 	import './layout.css';
 	import LuminaPng from './lumina.png';

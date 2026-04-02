@@ -11,7 +11,10 @@
 	  loadSettings,
 	  settingsState
 	} from '$lib/stores/settings.svelte';
-	import { CheckIcon, EyeIcon, EyeOffIcon, RotateCcwIcon } from '@lucide/svelte';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 

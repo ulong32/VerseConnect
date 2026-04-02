@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { CheckIcon, PlusIcon, PencilIcon, PencilLineIcon, XIcon, UserIcon, CircleCheckBigIcon } from '@lucide/svelte';
+  import CheckIcon from '@lucide/svelte/icons/check';
+  import PlusIcon from '@lucide/svelte/icons/plus';
+  import PencilIcon from '@lucide/svelte/icons/pencil';
+  import PencilLineIcon from '@lucide/svelte/icons/pencil-line';
+  import XIcon from '@lucide/svelte/icons/x';
+  import UserIcon from '@lucide/svelte/icons/user';
+  import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
 	import { Avatar } from '@skeletonlabs/skeleton-svelte';
 	import {
 		sessionState,
