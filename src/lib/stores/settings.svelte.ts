@@ -1,8 +1,8 @@
 // Character presets
-export const CHARACTER_PRESETS = ['ひまり', 'みつき', 'つむぎ', 'サクラ', 'タマキ', 'アイリ', 'リンリン', 'チィ', 'じゅりあ', 'える', 'すばる', 'おとめ', 'ビビ', 'リング'];
+export const CHARACTER_PRESETS = [ 'いのり', 'あおい', 'ぐみ', 'おりびあ', 'ナナ', 'エマ', 'ひまり', 'みつき', 'つむぎ', 'サクラ', 'タマキ', 'アイリ', 'リンリン', 'チィ', 'じゅりあ', 'える', 'すばる', 'おとめ', 'ビビ', 'リング'];
 
 // Item image constants
-export const ITEM_IMAGE_SUFFIX = '_150.webp';
+export const ITEM_IMAGE_SUFFIX = '.webp';
 
 // Reactive state using Svelte 5 runes
 export const settingsState = $state({
