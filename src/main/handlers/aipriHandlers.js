@@ -19,10 +19,10 @@ export function setupAipriHandlers() {
     const store = getStore();
     const { name } = credentials;
 
-    // Check for duplicate name
+    // Check for duplicate cardId
     const accounts = store.get('aipriAccounts') || [];
-    if (accounts.some(acc => acc.name === name)) {
-      return { success: false, error: 'この名前のアカウントは既に登録されています' };
+    if (accounts.some(acc => acc.cardId === credentials.cardId)) {
+      return { success: false, error: 'このセーブカードIDのアカウントは既に登録されています' };
     }
 
     // Perform login
@@ -103,10 +103,10 @@ export function setupAipriHandlers() {
 
     const oldAccount = accounts[accountIndex];
 
-    // Check if new name conflicts with existing account (if name changed)
-    if (credentials.name !== oldName) {
-      if (accounts.some(acc => acc.name === credentials.name)) {
-        return { success: false, error: 'この名前のアカウントは既に登録されています' };
+    // Check if new cardId conflicts with existing account (if cardId changed)
+    if (credentials.cardId !== oldAccount.cardId) {
+      if (accounts.some(acc => acc.cardId === credentials.cardId)) {
+        return { success: false, error: 'このセーブカードIDのアカウントは既に登録されています' };
       }
     }
 
