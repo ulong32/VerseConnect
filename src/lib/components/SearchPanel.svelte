@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { getCustomCharacters, getPresetCharacters } from '$lib/stores/settings.svelte';
 	import ArrowDown01Icon from '@lucide/svelte/icons/arrow-down-01';
 	import ArrowUp01Icon from '@lucide/svelte/icons/arrow-up-01';
+	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import CircleSlash2Icon from '@lucide/svelte/icons/circle-slash-2';
 	import EqualIcon from '@lucide/svelte/icons/equal';
@@ -10,14 +12,15 @@
 	import TagIcon from '@lucide/svelte/icons/tag';
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import UserRoundCogIcon from '@lucide/svelte/icons/user-round-cog';
-	import UsersIcon from '@lucide/svelte/icons/users';
 	import UserXIcon from '@lucide/svelte/icons/user-x';
-	import { getPresetCharacters, getCustomCharacters } from '$lib/stores/settings.svelte';
+	import UsersIcon from '@lucide/svelte/icons/users';
 	interface Props {
 		selectedCharacters: string[];
 		tags: string[];
 		selectedTags: string[];
 		searchItem: string;
+		months: string[];
+		selectedMonth: string;
 		sortOrder: 'asc' | 'desc' | 'none';
 		friendCardFilter: 'all' | 'with' | 'without';
 		isMultiSelectMode: boolean;
@@ -29,6 +32,7 @@
 		oncharacterselect: (characters: string[]) => void;
 		ontagselect: (tags: string[]) => void;
 		onitemsearch: (item: string) => void;
+		onmonthchange: (month: string) => void;
 		onsortchange: (order: 'asc' | 'desc' | 'none') => void;
 		onfriendcardfilterchange: (filter: 'all' | 'with' | 'without') => void;
 		ontogglemultiselect: () => void;
@@ -39,7 +43,7 @@
 		onexacttagmatchchange: (value: boolean) => void;
 	}
 
-	let { selectedCharacters, tags, selectedTags, searchItem, sortOrder, friendCardFilter, isMultiSelectMode, noCharacterFilter, noItemFilter, noTagFilter, exactCharacterMatch, exactTagMatch, oncharacterselect, ontagselect, onitemsearch, onsortchange, onfriendcardfilterchange, ontogglemultiselect, onnocharacterfilterchange, onnoitemfilterchange, onnotagfilterchange, onexactcharactermatchchange, onexacttagmatchchange }: Props = $props();
+	let { selectedCharacters, tags, selectedTags, searchItem, months, selectedMonth, sortOrder, friendCardFilter, isMultiSelectMode, noCharacterFilter, noItemFilter, noTagFilter, exactCharacterMatch, exactTagMatch, oncharacterselect, ontagselect, onitemsearch, onmonthchange, onsortchange, onfriendcardfilterchange, ontogglemultiselect, onnocharacterfilterchange, onnoitemfilterchange, onnotagfilterchange, onexactcharactermatchchange, onexacttagmatchchange }: Props = $props();
 
 	function toggleCharacter(char: string) {
 		if (selectedCharacters.includes(char)) {
@@ -71,7 +75,7 @@
 		else onfriendcardfilterchange('all');
 	}
 
-	let hasFilter = $derived(selectedCharacters.length > 0 || selectedTags.length > 0 || searchItem.length > 0 || friendCardFilter !== 'all' || noCharacterFilter || noItemFilter || noTagFilter);
+	let hasFilter = $derived(selectedCharacters.length > 0 || selectedTags.length > 0 || searchItem.length > 0 || selectedMonth.length > 0 || friendCardFilter !== 'all' || noCharacterFilter || noItemFilter || noTagFilter);
 
 	// Split characters into preset and custom
 	let presetCharacters = getPresetCharacters();
@@ -81,6 +85,7 @@
 		oncharacterselect([]);
 		ontagselect([]);
 		onitemsearch('');
+		onmonthchange('');
 		onfriendcardfilterchange('all');
 		onnocharacterfilterchange(false);
 		onnoitemfilterchange(false);
@@ -246,14 +251,30 @@
 	{/if}
 
 	<!-- Item Search -->
-	<div class="flex items-center gap-2">
-		<ShirtIcon class="size-4 text-gray-500 shrink-0" />
-		<input
-			type="text"
-			value={searchItem}
-			oninput={(e) => onitemsearch(e.currentTarget.value)}
-			placeholder="アイテム名で検索（完全一致）"
-			class="flex-1 px-3 py-1.5 text-sm bg-white/10 text-white rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none"
-		/>
+	<div class="flex items-center gap-2 flex-wrap">
+		<div class="flex items-center gap-2 min-w-55">
+			<CalendarIcon class="size-4 text-gray-500 shrink-0" />
+			<select
+				value={selectedMonth}
+				onchange={(e) => onmonthchange(e.currentTarget.value)}
+				class="w-full px-3 py-1.5 text-sm bg-white/10 text-white rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none"
+			>
+				<option value="" style="color:#111827; background-color:#ffffff;">すべての月</option>
+				{#each months as month}
+					<option value={month} style="color:#111827; background-color:#ffffff;">{month}</option>
+				{/each}
+			</select>
+		</div>
+
+		<div class="flex items-center gap-2 flex-1 min-w-55">
+			<ShirtIcon class="size-4 text-gray-500 shrink-0" />
+			<input
+				type="text"
+				value={searchItem}
+				oninput={(e) => onitemsearch(e.currentTarget.value)}
+				placeholder="アイテム名で検索（完全一致）"
+				class="flex-1 px-3 py-1.5 text-sm bg-white/10 text-white rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none"
+			/>
+		</div>
 	</div>
 </div>

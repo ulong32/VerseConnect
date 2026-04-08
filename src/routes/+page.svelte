@@ -34,6 +34,7 @@
 	let searchCharacters: string[] = $state([]);
 	let searchTags: string[] = $state([]);
 	let searchItem: string = $state('');
+	let selectedMonth: string = $state('');
 	let sortOrder = $state<'asc' | 'desc' | 'none'>('desc');
 	let friendCardFilter = $state<'all' | 'with' | 'without'>('all');
 	let noCharacterFilter = $state(false);
@@ -41,6 +42,17 @@
 	let noTagFilter = $state(false);
 	let exactCharacterMatch = $state(false);
 	let exactTagMatch = $state(false);
+
+	let availableMonths = $derived.by(() => {
+		const months = new Set<string>();
+		for (const image of images) {
+			const date = image.extractedDate;
+			if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+				months.add(date.slice(0, 7));
+			}
+		}
+		return Array.from(months).sort((a, b) => b.localeCompare(a));
+	});
 
 
 	// Infinite scroll state
@@ -83,6 +95,11 @@
 		// Filter by item (exact match)
 		if (searchItem.trim()) {
 			result = result.filter(img => img.metadata?.item === searchItem.trim());
+		}
+
+		// Filter by month (YYYY-MM)
+		if (selectedMonth) {
+			result = result.filter(img => img.extractedDate?.startsWith(selectedMonth));
 		}
 
 		// Filter by friend card
@@ -194,6 +211,7 @@
 			chars: searchCharacters,
 			tags: searchTags,
 			item: searchItem,
+			month: selectedMonth,
 			sort: sortOrder,
 			friendCard: friendCardFilter,
 			noChar: noCharacterFilter,
@@ -459,6 +477,8 @@
 			tags={getAllTags()}
 			selectedTags={searchTags}
 			{searchItem}
+			months={availableMonths}
+			{selectedMonth}
 			{sortOrder}
 			{friendCardFilter}
 			{isMultiSelectMode}
@@ -470,6 +490,7 @@
 			oncharacterselect={(chars) => searchCharacters = chars}
 			ontagselect={(tags) => searchTags = tags}
 			onitemsearch={(item) => searchItem = item}
+			onmonthchange={(month) => selectedMonth = month}
 			onsortchange={(order) => sortOrder = order}
 			onfriendcardfilterchange={(f) => friendCardFilter = f}
 			ontogglemultiselect={toggleMultiSelectMode}
@@ -606,5 +627,3 @@
 		onapply={applyBulkCharacters}
 	/>
 {/if}
-
-
