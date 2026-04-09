@@ -1,10 +1,12 @@
-import { net, session } from 'electron';
-import fs from 'fs';
-import path from 'path';
-import { getProfileImagesDir, getStore } from '../store.js';
+import { net, session } from "electron";
+import fs from "fs";
+import path from "path";
+import { getProfileImagesDir, getStore } from "../store.js";
 
-const AIPRI_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const AIPRI_BASE_URL = 'https://aipri.jp';
+const AIPRI_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const AIPRI_BASE_URL = "https://aipri.jp";
+const AIPRI_CDN_BASE_URL = "https://cdnaipriimg01.blob.core.windows.net";
 
 /**
  * Parse Set-Cookie header and extract cookies
@@ -12,10 +14,8 @@ const AIPRI_BASE_URL = 'https://aipri.jp';
  * @returns {string}
  */
 export const parseCookies = (setCookieHeaders) => {
-  if (!setCookieHeaders || setCookieHeaders.length === 0) return '';
-  return setCookieHeaders
-    .map(cookie => cookie.split(';')[0])
-    .join('; ');
+  if (!setCookieHeaders || setCookieHeaders.length === 0) return "";
+  return setCookieHeaders.map((cookie) => cookie.split(";")[0]).join("; ");
 };
 
 /**
@@ -29,7 +29,7 @@ export const extractProfileImage = (html) => {
   if (match && match[1]) {
     // If relative URL, make it absolute
     const src = match[1];
-    if (src.startsWith('/')) {
+    if (src.startsWith("/")) {
       return AIPRI_BASE_URL + src;
     }
     return src;
@@ -38,7 +38,7 @@ export const extractProfileImage = (html) => {
   const altMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*profile_thumbImage[^"]*"/);
   if (altMatch && altMatch[1]) {
     const src = altMatch[1];
-    if (src.startsWith('/')) {
+    if (src.startsWith("/")) {
       return AIPRI_BASE_URL + src;
     }
     return src;
@@ -52,11 +52,11 @@ export const extractProfileImage = (html) => {
  */
 export const getActiveSessionCookie = () => {
   const store = getStore();
-  const activeAccountName = store.get('aipriActiveAccountName');
+  const activeAccountName = store.get("aipriActiveAccountName");
   if (!activeAccountName) return null;
 
-  const accounts = store.get('aipriAccounts') || [];
-  const activeAccount = accounts.find(acc => acc.name === activeAccountName);
+  const accounts = store.get("aipriAccounts") || [];
+  const activeAccount = accounts.find((acc) => acc.name === activeAccountName);
   return activeAccount?.sessionCookie || null;
 };
 
@@ -66,16 +66,14 @@ export const getActiveSessionCookie = () => {
  */
 export const updateActiveSessionCookie = (sessionCookie) => {
   const store = getStore();
-  const activeAccountName = store.get('aipriActiveAccountName');
+  const activeAccountName = store.get("aipriActiveAccountName");
   if (!activeAccountName) return;
 
-  const accounts = store.get('aipriAccounts') || [];
-  const updatedAccounts = accounts.map(acc =>
-    acc.name === activeAccountName
-      ? { ...acc, sessionCookie }
-      : acc
+  const accounts = store.get("aipriAccounts") || [];
+  const updatedAccounts = accounts.map((acc) =>
+    acc.name === activeAccountName ? { ...acc, sessionCookie } : acc,
   );
-  store.set('aipriAccounts', updatedAccounts);
+  store.set("aipriAccounts", updatedAccounts);
 };
 
 /**
@@ -90,36 +88,41 @@ export const setAipriSessionCookies = async (cookieString) => {
     for (const cookie of existingCookies) {
       await session.defaultSession.cookies.remove(AIPRI_BASE_URL, cookie.name);
     }
-    const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+    const mypageCookies = await session.defaultSession.cookies.get({
+      url: `${AIPRI_BASE_URL}/mypage/`,
+    });
     for (const cookie of mypageCookies) {
       await session.defaultSession.cookies.remove(`${AIPRI_BASE_URL}/mypage/`, cookie.name);
     }
 
     // Parse and set new cookies
     if (cookieString) {
-      const cookies = cookieString.split(';').map(c => c.trim()).filter(c => c);
+      const cookies = cookieString
+        .split(";")
+        .map((c) => c.trim())
+        .filter((c) => c);
       for (const cookie of cookies) {
-        const [name, ...valueParts] = cookie.split('=');
-        const value = valueParts.join('=');
+        const [name, ...valueParts] = cookie.split("=");
+        const value = valueParts.join("=");
         if (name && value) {
           // Set cookie for both paths
           await session.defaultSession.cookies.set({
             url: AIPRI_BASE_URL,
             name: name.trim(),
             value: value.trim(),
-            path: '/'
+            path: "/",
           });
           await session.defaultSession.cookies.set({
             url: `${AIPRI_BASE_URL}/mypage/`,
             name: name.trim(),
             value: value.trim(),
-            path: '/mypage/'
+            path: "/mypage/",
           });
         }
       }
     }
   } catch (err) {
-    console.error('Error setting aipri session cookies:', err);
+    console.error("Error setting aipri session cookies:", err);
   }
 };
 
@@ -131,31 +134,31 @@ export const setAipriSessionCookies = async (cookieString) => {
  * @returns {Promise<string | null>}
  */
 export const downloadAndSaveProfileImage = async (imageUrl, accountName, sessionCookie) => {
-  console.log('[Profile Image] Downloading for account:', accountName, 'URL:', imageUrl);
+  console.log("[Profile Image] Downloading for account:", accountName, "URL:", imageUrl);
   try {
     // Set session cookies for this account
-    await setAipriSessionCookies(sessionCookie || '');
+    await setAipriSessionCookies(sessionCookie || "");
 
     const response = await net.fetch(imageUrl, {
-      headers: { 'User-Agent': AIPRI_USER_AGENT }
+      headers: { "User-Agent": AIPRI_USER_AGENT },
     });
 
     if (!response.ok) {
-      console.error('Failed to download profile image:', response.status);
+      console.error("Failed to download profile image:", response.status);
       return null;
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
     // Sanitize account name for filename
-    const safeAccountName = accountName.replace(/[<>:"/\\|?*]/g, '_');
+    const safeAccountName = accountName.replace(/[<>:"/\\|?*]/g, "_");
     const filename = `${safeAccountName}.jpg`;
     const profileImagesDir = getProfileImagesDir();
     const filePath = path.join(profileImagesDir, filename);
-    console.log('[Profile Image] Saving to:', filePath, 'Buffer size:', buffer.length);
+    console.log("[Profile Image] Saving to:", filePath, "Buffer size:", buffer.length);
     fs.writeFileSync(filePath, buffer);
     return filePath;
   } catch (error) {
-    console.error('Error downloading profile image:', error);
+    console.error("Error downloading profile image:", error);
     return null;
   }
 };
@@ -174,33 +177,35 @@ export const performLogin = async (credentials) => {
     for (const cookie of existingCookies) {
       await session.defaultSession.cookies.remove(AIPRI_BASE_URL, cookie.name);
     }
-    const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+    const mypageCookies = await session.defaultSession.cookies.get({
+      url: `${AIPRI_BASE_URL}/mypage/`,
+    });
     for (const cookie of mypageCookies) {
       await session.defaultSession.cookies.remove(`${AIPRI_BASE_URL}/mypage/`, cookie.name);
     }
 
     // Build form data
     const formData = new URLSearchParams();
-    formData.append('val[card_id]', cardId);
-    formData.append('val[name]', name);
-    formData.append('val[birthdayM]', birthdayM);
-    formData.append('val[birthdayD]', birthdayD);
+    formData.append("val[card_id]", cardId);
+    formData.append("val[name]", name);
+    formData.append("val[birthdayM]", birthdayM);
+    formData.append("val[birthdayD]", birthdayD);
 
     const loginUrl = `${AIPRI_BASE_URL}/mypage/login`;
 
     // Make login request - follow redirects automatically
     const response = await net.fetch(loginUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': AIPRI_USER_AGENT,
-        'Referer': loginUrl,
-        'Origin': AIPRI_BASE_URL
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": AIPRI_USER_AGENT,
+        Referer: loginUrl,
+        Origin: AIPRI_BASE_URL,
       },
       body: formData.toString(),
-      redirect: 'follow',
-      credentials: 'include',
-      bypassCustomProtocolHandlers: true
+      redirect: "follow",
+      credentials: "include",
+      bypassCustomProtocolHandlers: true,
     });
 
     // Get cookies from response
@@ -212,19 +217,19 @@ export const performLogin = async (credentials) => {
       try {
         // Get cookies for both root and /mypage/ path (MYPAPSSID has path=/mypage/)
         const rootCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
-        const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+        const mypageCookies = await session.defaultSession.cookies.get({
+          url: `${AIPRI_BASE_URL}/mypage/`,
+        });
 
         // Combine and dedupe cookies
         const allCookies = [...rootCookies, ...mypageCookies];
-        const uniqueCookies = allCookies.filter((cookie, index, self) =>
-          index === self.findIndex(c => c.name === cookie.name)
+        const uniqueCookies = allCookies.filter(
+          (cookie, index, self) => index === self.findIndex((c) => c.name === cookie.name),
         );
 
-        cookies = uniqueCookies
-          .map(c => `${c.name}=${c.value}`)
-          .join('; ');
+        cookies = uniqueCookies.map((c) => `${c.name}=${c.value}`).join("; ");
       } catch (err) {
-        console.error('Error getting cookies from session:', err);
+        console.error("Error getting cookies from session:", err);
       }
     }
 
@@ -238,40 +243,49 @@ export const performLogin = async (credentials) => {
     const html = await response.text();
 
     // Check if we're still on the login page (login failed)
-    if (finalUrl.includes('/login') || html.includes('id="loginForm"') || html.includes('ログインフォーム')) {
-      return { success: false, error: 'ログインに失敗しました。入力情報を確認してください。' };
+    if (
+      finalUrl.includes("/login") ||
+      html.includes('id="loginForm"') ||
+      html.includes("ログインフォーム")
+    ) {
+      return { success: false, error: "ログインに失敗しました。入力情報を確認してください。" };
     }
 
     // Fetch mypage explicitly with the obtained cookies to get correct profile image
     let profileImageUrl = null;
     if (cookies) {
       try {
-        console.log('[Profile Image] Fetching mypage with explicit cookies for:', name);
+        console.log("[Profile Image] Fetching mypage with explicit cookies for:", name);
         // Set session cookies for this account
         await setAipriSessionCookies(cookies);
 
         const mypageResponse = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
           headers: {
-            'User-Agent': AIPRI_USER_AGENT
+            "User-Agent": AIPRI_USER_AGENT,
           },
-          redirect: 'follow'
+          redirect: "follow",
         });
 
-        console.log('[Profile Image] Mypage response:', mypageResponse.status, 'Final URL:', mypageResponse.url);
+        console.log(
+          "[Profile Image] Mypage response:",
+          mypageResponse.status,
+          "Final URL:",
+          mypageResponse.url,
+        );
 
         if (mypageResponse.ok) {
           const mypageHtml = await mypageResponse.text();
           // Check if we got redirected to login page
-          if (mypageResponse.url.includes('/login')) {
-            console.log('[Profile Image] Redirected to login, falling back to login HTML');
+          if (mypageResponse.url.includes("/login")) {
+            console.log("[Profile Image] Redirected to login, falling back to login HTML");
             profileImageUrl = extractProfileImage(html);
           } else {
             profileImageUrl = extractProfileImage(mypageHtml);
           }
-          console.log('[Profile Image] Extracted URL:', profileImageUrl);
+          console.log("[Profile Image] Extracted URL:", profileImageUrl);
         }
       } catch (err) {
-        console.error('Error fetching mypage for profile image:', err);
+        console.error("Error fetching mypage for profile image:", err);
         // Fallback to login response HTML
         profileImageUrl = extractProfileImage(html);
       }
@@ -281,11 +295,11 @@ export const performLogin = async (credentials) => {
 
     return {
       success: true,
-      cookies: cookies || '',
-      profileImageUrl: profileImageUrl || undefined
+      cookies: cookies || "",
+      profileImageUrl: profileImageUrl || undefined,
     };
   } catch (error) {
-    console.error('Aipri login error:', error);
+    console.error("Aipri login error:", error);
     return { success: false, error: `通信エラー: ${String(error)}` };
   }
 };
@@ -298,17 +312,17 @@ export const performLogin = async (credentials) => {
  */
 export const fetchPhotos = async (targetYm, isRetry = false) => {
   const store = getStore();
-  const activeAccountName = store.get('aipriActiveAccountName');
+  const activeAccountName = store.get("aipriActiveAccountName");
 
   if (!activeAccountName) {
-    return { success: false, error: 'アクティブなアカウントがありません。' };
+    return { success: false, error: "アクティブなアカウントがありません。" };
   }
 
-  const accounts = store.get('aipriAccounts') || [];
-  const account = accounts.find(acc => acc.name === activeAccountName);
+  const accounts = store.get("aipriAccounts") || [];
+  const account = accounts.find((acc) => acc.name === activeAccountName);
 
   if (!account) {
-    return { success: false, error: 'アカウントが見つかりません。' };
+    return { success: false, error: "アカウントが見つかりません。" };
   }
 
   const sessionCookies = account.sessionCookie;
@@ -318,7 +332,7 @@ export const fetchPhotos = async (targetYm, isRetry = false) => {
     if (!isRetry) {
       return await performReloginAndRetry(store, account, accounts, targetYm);
     }
-    return { success: false, error: 'セッションがありません。ログインしてください。' };
+    return { success: false, error: "セッションがありません。ログインしてください。" };
   }
 
   try {
@@ -326,17 +340,17 @@ export const fetchPhotos = async (targetYm, isRetry = false) => {
     await setAipriSessionCookies(sessionCookies);
 
     const formData = new URLSearchParams();
-    formData.append('target_ym', targetYm);
-    formData.append('data_count', '999');
+    formData.append("target_ym", targetYm);
+    formData.append("data_count", "999");
 
     const response = await net.fetch(`${AIPRI_BASE_URL}/mypage/api/myphoto-list`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'X-Requested-With': 'XMLHttpRequest',
-        'User-Agent': AIPRI_USER_AGENT
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": AIPRI_USER_AGENT,
       },
-      body: formData.toString()
+      body: formData.toString(),
     });
 
     if (!response.ok) {
@@ -346,24 +360,24 @@ export const fetchPhotos = async (targetYm, isRetry = false) => {
     const result = await response.json();
 
     // Check for session expired error (code 90)
-    if (result.code === '90') {
+    if (result.code === "90") {
       if (!isRetry) {
         return await performReloginAndRetry(store, account, accounts, targetYm);
       } else {
-        return { success: false, error: 'セッションが期限切れです。再ログインに失敗しました。' };
+        return { success: false, error: "セッションが期限切れです。再ログインに失敗しました。" };
       }
     }
 
-    if (result.code !== '00') {
-      return { success: false, error: result.message || 'APIエラーが発生しました' };
+    if (result.code !== "00") {
+      return { success: false, error: result.message || "APIエラーが発生しました" };
     }
 
     return {
       success: true,
-      photos: result.data?.photo_list || []
+      photos: result.data?.photo_list || [],
     };
   } catch (error) {
-    console.error('Fetch photos error:', error);
+    console.error("Fetch photos error:", error);
     return { success: false, error: `通信エラー: ${String(error)}` };
   }
 };
@@ -381,7 +395,7 @@ async function performReloginAndRetry(store, account, accounts, targetYm) {
     cardId: account.cardId,
     name: account.name,
     birthdayM: account.birthdayM,
-    birthdayD: account.birthdayD
+    birthdayD: account.birthdayD,
   });
 
   if (!loginResult.success) {
@@ -389,12 +403,10 @@ async function performReloginAndRetry(store, account, accounts, targetYm) {
   }
 
   // Update account with new session
-  const updatedAccounts = accounts.map(acc =>
-    acc.name === account.name
-      ? { ...acc, sessionCookie: loginResult.cookies || null }
-      : acc
+  const updatedAccounts = accounts.map((acc) =>
+    acc.name === account.name ? { ...acc, sessionCookie: loginResult.cookies || null } : acc,
   );
-  store.set('aipriAccounts', updatedAccounts);
+  store.set("aipriAccounts", updatedAccounts);
 
   // Retry fetch with new session
   const retryResult = await fetchPhotos(targetYm, true);
@@ -411,7 +423,7 @@ async function performReloginAndRetry(store, account, accounts, targetYm) {
  */
 export const downloadPhoto = async (url, filename, folderPath) => {
   if (!url || !filename || !folderPath) {
-    return { success: false, error: '無効なパラメータです' };
+    return { success: false, error: "無効なパラメータです" };
   }
 
   // Security: validate the download URL is from the expected domain
@@ -419,16 +431,16 @@ export const downloadPhoto = async (url, filename, folderPath) => {
   try {
     parsedUrl = new URL(url);
   } catch {
-    return { success: false, error: '無効なURLです' };
+    return { success: false, error: "無効なURLです" };
   }
   if (parsedUrl.origin !== new URL(AIPRI_BASE_URL).origin) {
-    return { success: false, error: '許可されていないダウンロード元です' };
+    return { success: false, error: "許可されていないダウンロード元です" };
   }
 
   // Security: strip any directory components from the filename to prevent path traversal
   const safeFilename = path.basename(filename);
-  if (!safeFilename || safeFilename === '.' || safeFilename === '..') {
-    return { success: false, error: '無効なファイル名です' };
+  if (!safeFilename || safeFilename === "." || safeFilename === "..") {
+    return { success: false, error: "無効なファイル名です" };
   }
 
   const targetPath = path.join(folderPath, safeFilename);
@@ -443,10 +455,10 @@ export const downloadPhoto = async (url, filename, folderPath) => {
 
   try {
     // Set session cookies for this account
-    await setAipriSessionCookies(sessionCookies || '');
+    await setAipriSessionCookies(sessionCookies || "");
 
     const response = await net.fetch(url, {
-      headers: { 'User-Agent': AIPRI_USER_AGENT }
+      headers: { "User-Agent": AIPRI_USER_AGENT },
     });
 
     if (!response.ok) {
@@ -458,7 +470,7 @@ export const downloadPhoto = async (url, filename, folderPath) => {
 
     return { success: true, skipped: false };
   } catch (error) {
-    console.error('Download photo error:', error);
+    console.error("Download photo error:", error);
     return { success: false, error: `ダウンロードエラー: ${String(error)}` };
   }
 };
@@ -475,15 +487,15 @@ export const verifySession = async (sessionCookie) => {
 
     const response = await net.fetch(`${AIPRI_BASE_URL}/mypage`, {
       headers: {
-        'User-Agent': AIPRI_USER_AGENT
+        "User-Agent": AIPRI_USER_AGENT,
       },
-      redirect: 'follow'
+      redirect: "follow",
     });
 
     const finalUrl = response.url;
 
-    if (finalUrl.includes('/mypage/login') || finalUrl.includes('/login')) {
-      return { valid: false, reason: 'セッションが期限切れです' };
+    if (finalUrl.includes("/mypage/login") || finalUrl.includes("/login")) {
+      return { valid: false, reason: "セッションが期限切れです" };
     }
 
     if (response.ok) {
@@ -493,9 +505,8 @@ export const verifySession = async (sessionCookie) => {
     }
 
     return { valid: false, reason: `予期しないレスポンス (${response.status})` };
-
   } catch (error) {
-    console.error('Session verify error:', error);
+    console.error("Session verify error:", error);
     return { valid: false, reason: `通信エラー: ${String(error)}` };
   }
 };
