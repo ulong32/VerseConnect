@@ -3,6 +3,9 @@ import path from 'path';
 import fs from 'fs/promises';
 import { getStore } from '../store.js';
 
+/** Allowed image file extensions for clipboard copy */
+const ALLOWED_CLIPBOARD_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.ico']);
+
 /**
  * @param {() => import('electron').BrowserWindow | null} getMainWindow
  */
@@ -109,6 +112,12 @@ export function setupAppHandlers(getMainWindow) {
   // Copy image to clipboard
   ipcMain.handle('copy-image-to-clipboard', async (event, filePath) => {
     try {
+      // Security: only allow image file extensions to prevent arbitrary file reads
+      const ext = path.extname(filePath).toLowerCase();
+      if (!ALLOWED_CLIPBOARD_EXTENSIONS.has(ext)) {
+        return { success: false, error: '許可されていないファイル形式です' };
+      }
+
       // Read the file and convert to nativeImage
       const buffer = await fs.readFile(filePath);
       const image = nativeImage.createFromBuffer(buffer);

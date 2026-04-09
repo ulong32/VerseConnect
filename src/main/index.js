@@ -1,11 +1,15 @@
 import { app, ipcMain, net, protocol } from 'electron';
 import serve from 'electron-serve';
+import path from 'path';
 import { pathToFileURL } from 'url';
 import { setupAipriHandlers } from './handlers/aipriHandlers.js';
 import { setupAppHandlers } from './handlers/appHandlers.js';
 import { setupFileHandlers } from './handlers/fileHandlers.js';
 import { initStore } from './store.js';
 import { createWindow, getMainWindow } from './windowManager.js';
+
+/** Allowed image file extensions for the local-image:// protocol */
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.ico']);
 
 const serveURL = serve({ directory: '.' });
 const port = process.env.PORT || 5173;
@@ -18,7 +22,6 @@ protocol.registerSchemesAsPrivileged([
     privileges: {
       secure: true,
       supportFetchAPI: true,
-      bypassCSP: true,
       stream: true
     }
   },
@@ -27,7 +30,6 @@ protocol.registerSchemesAsPrivileged([
     privileges: {
       secure: true,
       supportFetchAPI: true,
-      bypassCSP: true,
       stream: true
     }
   }
@@ -60,7 +62,19 @@ app.once('ready', async () => {
     // Strip query parameters and decode file path
     const urlWithoutProtocol = request.url.replace('local-image://', '');
     const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
-    const filePath = decodeURIComponent(urlWithoutQuery);
+    let filePath;
+    try {
+      filePath = decodeURIComponent(urlWithoutQuery);
+    } catch {
+      return new Response('Bad Request', { status: 400 });
+    }
+
+    // Security: only allow image file extensions to prevent arbitrary file reads
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     return net.fetch(pathToFileURL(filePath).toString());
   });
 
@@ -78,11 +92,29 @@ app.once('ready', async () => {
     // URL format: item-image://path/to/item_suffix.webp
     const urlWithoutProtocol = request.url.replace('item-image://', '');
     const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
-    const relativePath = decodeURIComponent(urlWithoutQuery);
+    let relativePath;
+    try {
+      relativePath = decodeURIComponent(urlWithoutQuery);
+    } catch {
+      return new Response('Bad Request', { status: 400 });
+    }
 
-    // Construct the full file path
-    const path = await import('path');
-    const filePath = path.join(itemImageFolderPath, relativePath);
+    // Construct the full file path and normalize it
+    const resolvedBase = path.resolve(itemImageFolderPath);
+    const filePath = path.resolve(resolvedBase, relativePath);
+
+    // Security: ensure the resolved path stays within the configured folder
+    // Use path.relative() to detect traversal attempts — safe on all platforms
+    const rel = path.relative(resolvedBase, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    // Security: only allow image file extensions
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
     return net.fetch(pathToFileURL(filePath).toString());
   });
