@@ -459,6 +459,7 @@ export const downloadPhoto = async (url, filename, folderPath) => {
 
     const response = await net.fetch(url, {
       headers: { "User-Agent": AIPRI_USER_AGENT },
+      redirect: "error",
     });
 
     if (!response.ok) {

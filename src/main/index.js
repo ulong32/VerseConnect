@@ -62,7 +62,12 @@ app.once('ready', async () => {
     // Strip query parameters and decode file path
     const urlWithoutProtocol = request.url.replace('local-image://', '');
     const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
-    const filePath = decodeURIComponent(urlWithoutQuery);
+    let filePath;
+    try {
+      filePath = decodeURIComponent(urlWithoutQuery);
+    } catch {
+      return new Response('Bad Request', { status: 400 });
+    }
 
     // Security: only allow image file extensions to prevent arbitrary file reads
     const ext = path.extname(filePath).toLowerCase();
@@ -87,17 +92,21 @@ app.once('ready', async () => {
     // URL format: item-image://path/to/item_suffix.webp
     const urlWithoutProtocol = request.url.replace('item-image://', '');
     const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
-    const relativePath = decodeURIComponent(urlWithoutQuery);
+    let relativePath;
+    try {
+      relativePath = decodeURIComponent(urlWithoutQuery);
+    } catch {
+      return new Response('Bad Request', { status: 400 });
+    }
 
     // Construct the full file path and normalize it
     const resolvedBase = path.resolve(itemImageFolderPath);
     const filePath = path.resolve(resolvedBase, relativePath);
 
     // Security: ensure the resolved path stays within the configured folder
-    // Use case-insensitive comparison on Windows where paths are case-insensitive
-    const normalizedBase = resolvedBase.toLowerCase();
-    const normalizedFilePath = filePath.toLowerCase();
-    if (!normalizedFilePath.startsWith(normalizedBase + path.sep) && normalizedFilePath !== normalizedBase) {
+    // Use path.relative() to detect traversal attempts — safe on all platforms
+    const rel = path.relative(resolvedBase, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       return new Response('Forbidden', { status: 403 });
     }
 
