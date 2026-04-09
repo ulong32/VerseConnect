@@ -414,7 +414,24 @@ export const downloadPhoto = async (url, filename, folderPath) => {
     return { success: false, error: '無効なパラメータです' };
   }
 
-  const targetPath = path.join(folderPath, filename);
+  // Security: validate the download URL is from the expected domain
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return { success: false, error: '無効なURLです' };
+  }
+  if (parsedUrl.origin !== AIPRI_BASE_URL) {
+    return { success: false, error: '許可されていないダウンロード元です' };
+  }
+
+  // Security: strip any directory components from the filename to prevent path traversal
+  const safeFilename = path.basename(filename);
+  if (!safeFilename || safeFilename === '.' || safeFilename === '..') {
+    return { success: false, error: '無効なファイル名です' };
+  }
+
+  const targetPath = path.join(folderPath, safeFilename);
 
   // Check if file already exists
   if (fs.existsSync(targetPath)) {

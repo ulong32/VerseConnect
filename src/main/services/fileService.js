@@ -147,6 +147,12 @@ export const saveFriendCard = (folderPath, filename, base64Data) => {
     return { success: false, error: 'Invalid parameters' };
   }
 
+  // Security: strip any directory components from the filename to prevent path traversal
+  const safeFilename = path.basename(filename);
+  if (!safeFilename || safeFilename === '.' || safeFilename === '..') {
+    return { success: false, error: 'Invalid filename' };
+  }
+
   try {
     // Create friend_card directory if it doesn't exist
     const friendCardDir = path.join(folderPath, 'friend_card');
@@ -156,10 +162,10 @@ export const saveFriendCard = (folderPath, filename, base64Data) => {
 
     // Convert base64 to buffer and save
     const buffer = Buffer.from(base64Data, 'base64');
-    const targetPath = path.join(friendCardDir, filename);
+    const targetPath = path.join(friendCardDir, safeFilename);
     fs.writeFileSync(targetPath, buffer);
 
-    return { success: true, filename };
+    return { success: true, filename: safeFilename };
   } catch (error) {
     console.error('Error saving friend card:', error);
     return { success: false, error: String(error) };
