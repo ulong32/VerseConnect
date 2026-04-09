@@ -90,17 +90,19 @@ app.once('ready', async () => {
     const relativePath = decodeURIComponent(urlWithoutQuery);
 
     // Construct the full file path and normalize it
-    const pathModule = await import('path');
-    const resolvedBase = pathModule.resolve(itemImageFolderPath);
-    const filePath = pathModule.resolve(resolvedBase, relativePath);
+    const resolvedBase = path.resolve(itemImageFolderPath);
+    const filePath = path.resolve(resolvedBase, relativePath);
 
     // Security: ensure the resolved path stays within the configured folder
-    if (!filePath.startsWith(resolvedBase + pathModule.sep) && filePath !== resolvedBase) {
+    // Use case-insensitive comparison on Windows where paths are case-insensitive
+    const normalizedBase = resolvedBase.toLowerCase();
+    const normalizedFilePath = filePath.toLowerCase();
+    if (!normalizedFilePath.startsWith(normalizedBase + path.sep) && normalizedFilePath !== normalizedBase) {
       return new Response('Forbidden', { status: 403 });
     }
 
     // Security: only allow image file extensions
-    const ext = pathModule.extname(filePath).toLowerCase();
+    const ext = path.extname(filePath).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
       return new Response('Forbidden', { status: 403 });
     }
