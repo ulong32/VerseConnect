@@ -433,7 +433,7 @@ export const downloadPhoto = async (url, filename, folderPath) => {
   } catch {
     return { success: false, error: "無効なURLです" };
   }
-  if (parsedUrl.origin !== new URL(AIPRI_BASE_URL).origin) {
+  if (parsedUrl.origin !== new URL(AIPRI_CDN_BASE_URL).origin) {
     return { success: false, error: "許可されていないダウンロード元です" };
   }
 
