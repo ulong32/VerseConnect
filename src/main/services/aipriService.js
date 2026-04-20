@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { net, session } from "electron";
 import fs from "fs";
 import path from "path";
@@ -9,13 +10,100 @@ const AIPRI_BASE_URL = "https://aipri.jp";
 const AIPRI_CDN_BASE_URL = "https://cdnaipriimg01.blob.core.windows.net";
 
 /**
+ * @typedef {{
+ *   accountId?: string,
+ *   name: string,
+ *   cardId: string,
+ *   birthdayM: string,
+ *   birthdayD: string,
+ *   sessionCookie: string | null,
+ *   profileImagePath: string | null
+ * }} AipriAccount
+ */
+
+/** @param {string | null | undefined} cookieString */
+const summarizeCookieString = (cookieString) => {
+  if (!cookieString) return "(empty)";
+  const names = cookieString
+    .split(";")
+    .map((/** @type {string} */ part) => part.trim())
+    .filter(Boolean)
+    .map((/** @type {string} */ pair) => pair.split("=")[0])
+    .filter(Boolean);
+  const uniqueNames = [...new Set(names)];
+  return `${uniqueNames.join(",")} (parts=${names.length})`;
+};
+
+/** @param {string | null | undefined} cookieString */
+const hasRequiredSessionCookies = (cookieString) =>
+  Boolean(
+    cookieString && cookieString.includes("PHPSESSID=") && cookieString.includes("MYPAPSSID="),
+  );
+
+/**
+ * Ensure account IDs exist and active account fields are consistent.
+ * @param {ReturnType<typeof getStore>} store
+ */
+const getNormalizedAipriState = (store) => {
+  const rawAccounts = /** @type {AipriAccount[]} */ (store.get("aipriAccounts") || []);
+  let accountsChanged = false;
+  const accounts = rawAccounts.map((account) => {
+    if (account.accountId) return account;
+    accountsChanged = true;
+    return { ...account, accountId: randomUUID() };
+  });
+
+  let activeAccountId = store.get("aipriActiveAccountId") || null;
+  const activeAccountName = store.get("aipriActiveAccountName") || null;
+  if (!activeAccountId && activeAccountName) {
+    activeAccountId =
+      accounts.find((account) => account.name === activeAccountName)?.accountId || null;
+  }
+
+  if (activeAccountId && !accounts.some((account) => account.accountId === activeAccountId)) {
+    activeAccountId = null;
+  }
+
+  const activeAccount = activeAccountId
+    ? accounts.find((account) => account.accountId === activeAccountId)
+    : null;
+  const resolvedActiveName = activeAccount?.name || null;
+
+  if (accountsChanged) {
+    store.set("aipriAccounts", accounts);
+  }
+  if ((store.get("aipriActiveAccountId") || null) !== activeAccountId) {
+    store.set("aipriActiveAccountId", activeAccountId);
+  }
+  if ((store.get("aipriActiveAccountName") || null) !== resolvedActiveName) {
+    store.set("aipriActiveAccountName", resolvedActiveName);
+  }
+
+  return {
+    accounts,
+    activeAccountId,
+    activeAccountName: resolvedActiveName,
+  };
+};
+
+/** @param {Electron.Cookie[]} cookies */
+const stringifyCookies = (cookies) => cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+
+/**
  * Parse Set-Cookie header and extract cookies
  * @param {string[]} setCookieHeaders
  * @returns {string}
  */
 export const parseCookies = (setCookieHeaders) => {
   if (!setCookieHeaders || setCookieHeaders.length === 0) return "";
-  return setCookieHeaders.map((cookie) => cookie.split(";")[0]).join("; ");
+  const parsed = setCookieHeaders.map((cookie) => cookie.split(";")[0]).join("; ");
+  console.log(
+    "[Aipri Debug] parseCookies headers:",
+    setCookieHeaders.length,
+    "=>",
+    summarizeCookieString(parsed),
+  );
+  return parsed;
 };
 
 /**
@@ -52,11 +140,10 @@ export const extractProfileImage = (html) => {
  */
 export const getActiveSessionCookie = () => {
   const store = getStore();
-  const activeAccountName = store.get("aipriActiveAccountName");
-  if (!activeAccountName) return null;
+  const { accounts, activeAccountId } = getNormalizedAipriState(store);
+  if (!activeAccountId) return null;
 
-  const accounts = store.get("aipriAccounts") || [];
-  const activeAccount = accounts.find((acc) => acc.name === activeAccountName);
+  const activeAccount = accounts.find((acc) => acc.accountId === activeAccountId);
   return activeAccount?.sessionCookie || null;
 };
 
@@ -66,12 +153,11 @@ export const getActiveSessionCookie = () => {
  */
 export const updateActiveSessionCookie = (sessionCookie) => {
   const store = getStore();
-  const activeAccountName = store.get("aipriActiveAccountName");
-  if (!activeAccountName) return;
+  const { accounts, activeAccountId } = getNormalizedAipriState(store);
+  if (!activeAccountId) return;
 
-  const accounts = store.get("aipriAccounts") || [];
   const updatedAccounts = accounts.map((acc) =>
-    acc.name === activeAccountName ? { ...acc, sessionCookie } : acc,
+    acc.accountId === activeAccountId ? { ...acc, sessionCookie } : acc,
   );
   store.set("aipriAccounts", updatedAccounts);
 };
@@ -83,6 +169,7 @@ export const updateActiveSessionCookie = (sessionCookie) => {
  */
 export const setAipriSessionCookies = async (cookieString) => {
   try {
+    console.log("[Aipri Debug] setAipriSessionCookies input:", summarizeCookieString(cookieString));
     // First clear existing cookies
     const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
     for (const cookie of existingCookies) {
@@ -136,8 +223,10 @@ export const setAipriSessionCookies = async (cookieString) => {
 export const downloadAndSaveProfileImage = async (imageUrl, accountName, sessionCookie) => {
   console.log("[Profile Image] Downloading for account:", accountName, "URL:", imageUrl);
   try {
-    // Set session cookies for this account
-    await setAipriSessionCookies(sessionCookie || "");
+    // Set session cookies only when explicitly provided.
+    if (sessionCookie) {
+      await setAipriSessionCookies(sessionCookie);
+    }
 
     const response = await net.fetch(imageUrl, {
       headers: { "User-Agent": AIPRI_USER_AGENT },
@@ -172,6 +261,7 @@ export const performLogin = async (credentials) => {
   const { cardId, name, birthdayM, birthdayD } = credentials;
 
   try {
+    console.log("[Aipri Debug] performLogin start:", { name, cardId });
     // Clear existing aipri.jp cookies to prevent session contamination
     const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
     for (const cookie of existingCookies) {
@@ -211,9 +301,14 @@ export const performLogin = async (credentials) => {
     // Get cookies from response
     const setCookies = response.headers.getSetCookie();
     let cookies = parseCookies(setCookies);
+    console.log(
+      "[Aipri Debug] performLogin response set-cookie summary:",
+      summarizeCookieString(cookies),
+    );
 
-    // If no cookies in headers (due to redirect:follow), get from session
-    if (!cookies) {
+    // When redirect:follow is used (and with Front Door), response headers can include only LB cookies.
+    // If required app session cookies are missing, recover from the Electron cookie jar.
+    if (!hasRequiredSessionCookies(cookies)) {
       try {
         // Get cookies for both root and /mypage/ path (MYPAPSSID has path=/mypage/)
         const rootCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
@@ -227,7 +322,35 @@ export const performLogin = async (credentials) => {
           (cookie, index, self) => index === self.findIndex((c) => c.name === cookie.name),
         );
 
-        cookies = uniqueCookies.map((c) => `${c.name}=${c.value}`).join("; ");
+        const cookieMap = new Map();
+        for (const cookie of uniqueCookies) {
+          cookieMap.set(cookie.name, cookie);
+        }
+
+        if (cookies) {
+          const parsedCookies = cookies
+            .split(";")
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .map((part) => {
+              const [name, ...valueParts] = part.split("=");
+              return { name, value: valueParts.join("=") };
+            })
+            .filter((entry) => entry.name && entry.value);
+
+          for (const cookie of parsedCookies) {
+            if (!cookieMap.has(cookie.name)) {
+              cookieMap.set(cookie.name, cookie);
+            }
+          }
+        }
+
+        cookies = stringifyCookies(Array.from(cookieMap.values()));
+        console.log(
+          "[Aipri Debug] performLogin fallback session cookies:",
+          Array.from(cookieMap.keys()).join(","),
+          `count=${cookieMap.size}`,
+        );
       } catch (err) {
         console.error("Error getting cookies from session:", err);
       }
@@ -248,8 +371,31 @@ export const performLogin = async (credentials) => {
       html.includes('id="loginForm"') ||
       html.includes("ログインフォーム")
     ) {
+      console.log("[Aipri Debug] performLogin rejected as login page:", finalUrl);
       return { success: false, error: "ログインに失敗しました。入力情報を確認してください。" };
     }
+
+    if (!hasRequiredSessionCookies(cookies)) {
+      console.log(
+        "[Aipri Debug] performLogin missing required session cookies:",
+        summarizeCookieString(cookies),
+      );
+      return {
+        success: false,
+        error: "ログインセッションの取得に失敗しました。しばらくしてから再試行してください。",
+      };
+    }
+
+    console.log(
+      "[Aipri Debug] performLogin accepted:",
+      name,
+      "finalUrl=",
+      finalUrl,
+      "cookieSummary=",
+      summarizeCookieString(cookies),
+      "hasMYPAPSSID=",
+      Boolean(cookies && cookies.includes("MYPAPSSID=")),
+    );
 
     // Fetch mypage explicitly with the obtained cookies to get correct profile image
     let profileImageUrl = null;
@@ -312,14 +458,13 @@ export const performLogin = async (credentials) => {
  */
 export const fetchPhotos = async (targetYm, isRetry = false) => {
   const store = getStore();
-  const activeAccountName = store.get("aipriActiveAccountName");
+  const { accounts, activeAccountId } = getNormalizedAipriState(store);
 
-  if (!activeAccountName) {
+  if (!activeAccountId) {
     return { success: false, error: "アクティブなアカウントがありません。" };
   }
 
-  const accounts = store.get("aipriAccounts") || [];
-  const account = accounts.find((acc) => acc.name === activeAccountName);
+  const account = accounts.find((acc) => acc.accountId === activeAccountId);
 
   if (!account) {
     return { success: false, error: "アカウントが見つかりません。" };
@@ -385,8 +530,8 @@ export const fetchPhotos = async (targetYm, isRetry = false) => {
 /**
  * Helper function to perform re-login and retry fetchPhotos
  * @param {ReturnType<typeof import('../store.js').getStore>} store
- * @param {{cardId: string, name: string, birthdayM: string, birthdayD: string, sessionCookie: string | null}} account
- * @param {Array<{name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>} accounts
+ * @param {AipriAccount} account
+ * @param {AipriAccount[]} accounts
  * @param {string} targetYm
  * @returns {Promise<{success: boolean, photos?: any[], error?: string, reloggedIn?: boolean}>}
  */
@@ -404,7 +549,9 @@ async function performReloginAndRetry(store, account, accounts, targetYm) {
 
   // Update account with new session
   const updatedAccounts = accounts.map((acc) =>
-    acc.name === account.name ? { ...acc, sessionCookie: loginResult.cookies || null } : acc,
+    acc.accountId === account.accountId
+      ? { ...acc, sessionCookie: loginResult.cookies || null }
+      : acc,
   );
   store.set("aipriAccounts", updatedAccounts);
 

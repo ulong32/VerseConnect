@@ -1,7 +1,7 @@
 # Import機能 実装ドキュメント
 
-**作成日**: 2026-01-06  
-**最終更新**: 2026-01-06  
+**作成日**: 2026-01-06
+**最終更新**: 2026-01-06
 **機能概要**: aipri.jp マイページにログインし、プロフィール画像の取得およびフォトのインポートを行う機能
 
 ---
@@ -66,32 +66,38 @@ import { ..., session } from 'electron';
 #### 定数
 
 ```javascript
-const AIPRI_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...';
-const AIPRI_BASE_URL = 'https://aipri.jp';
+const AIPRI_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...";
+const AIPRI_BASE_URL = "https://aipri.jp";
 ```
 
 #### ストア拡張
 
-`electron-store` に `aipriSession` フィールドを追加（Cookie文字列を保存）
+`electron-store` に multi-account 用フィールドを追加
 
 ```javascript
 defaults: {
   folderPath: '',
   customCharacters: [],
   customTags: [],
-  aipriSession: null  // Cookie文字列 "PHPSESSID=xxx; MYPAPSSID=yyy"
+  aipriAccounts: [],           // 登録済みアカウント配列
+  aipriActiveAccountId: null,  // 現在アクティブなアカウントID
+  aipriActiveAccountName: null // 後方互換用の表示名
 }
 ```
 
 #### IPCハンドラー
 
-| ハンドラー名 | 説明 |
-|-------------|------|
-| `aipri-login` | ログイン処理。成功時にCookieを永続化し、プロフィール画像URLを返却 |
-| `aipri-check-session` | 保存されたセッションの有効性をチェック（MYPAPSSID確認 + /mypage アクセス） |
-| `aipri-clear-session` | セッションをクリア（ログアウト） |
-| `aipri-fetch-photos` | 指定年月のフォトリストをAPIから取得 |
-| `aipri-download-photo` | 個別の画像をダウンロードしてローカルに保存（重複スキップ対応） |
+| ハンドラー名           | 説明                                                                       |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `aipri-get-accounts`   | 保存済みアカウント一覧と activeAccountId を返却                            |
+| `aipri-add-account`    | 新規ログインしてアカウントを追加し、アクティブ化                           |
+| `aipri-remove-account` | アカウント削除（必要ならプロフィール画像も削除）                           |
+| `aipri-update-account` | 認証情報更新時に再ログインし、セッション・画像を更新                       |
+| `aipri-switch-account` | 指定アカウントへ切替し、API利用前に再ログインでセッションを更新            |
+| `aipri-check-session`  | 保存されたセッションの有効性をチェック（MYPAPSSID確認 + /mypage アクセス） |
+| `aipri-clear-session`  | セッションをクリア（ログアウト）                                           |
+| `aipri-fetch-photos`   | 指定年月のフォトリストをAPIから取得                                        |
+| `aipri-download-photo` | 個別の画像をダウンロードしてローカルに保存（重複スキップ対応）             |
 
 #### Cookie取得の仕組み
 
@@ -101,7 +107,9 @@ defaults: {
 ```javascript
 // MYPAPSSIDは path=/mypage/ なので両方のパスからCookieを取得
 const rootCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
-const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_BASE_URL}/mypage/` });
+const mypageCookies = await session.defaultSession.cookies.get({
+  url: `${AIPRI_BASE_URL}/mypage/`,
+});
 ```
 
 #### ヘルパー関数
@@ -118,6 +126,7 @@ const mypageCookies = await session.defaultSession.cookies.get({ url: `${AIPRI_B
 **エンドポイント**: `POST https://aipri.jp/mypage/login`
 
 **リクエストヘッダー**:
+
 ```
 Content-Type: application/x-www-form-urlencoded
 User-Agent: [Chrome風UA]
@@ -126,6 +135,7 @@ Origin: https://aipri.jp
 ```
 
 **リクエストボディ**:
+
 ```
 val[card_id]=00000000-0000000
 val[name]=ユーザー名
@@ -134,6 +144,7 @@ val[birthdayD]=01
 ```
 
 **重要なフェッチオプション**:
+
 ```javascript
 {
   redirect: 'follow',
@@ -145,12 +156,13 @@ val[birthdayD]=01
 **レスポンス**: 302リダイレクト → ユーザーページ
 
 **設定されるCookie**:
+
 - `PHPSESSID` - path: `/`
 - `MYPAPSSID` - path: `/mypage/`, expires: 約30日後
 
 ### セッションチェック
 
-1. 保存されたCookieに `MYPAPSSID=` が含まれているか確認
+1. 保存されたCookieに `PHPSESSID=` と `MYPAPSSID=` の両方が含まれているか確認
 2. `/mypage` にCookie付きでアクセス
 3. 最終URLが `/login` を含まなければセッション有効
 
@@ -159,6 +171,7 @@ val[birthdayD]=01
 **エンドポイント**: `POST https://aipri.jp/mypage/api/myphoto-list`
 
 **リクエストヘッダー**:
+
 ```
 Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 X-Requested-With: XMLHttpRequest
@@ -167,15 +180,17 @@ Cookie: [保存済みセッションCookie]
 ```
 
 **リクエストボディ**:
+
 ```
 target_ym=202601
 data_count=999
 ```
 
 **レスポンス**:
+
 ```typescript
 interface AipriApiResponse {
-  code: string;  // "00" = 成功
+  code: string; // "00" = 成功
   message: string;
   data: {
     last_photo_seq: number;
@@ -185,8 +200,8 @@ interface AipriApiResponse {
 
 interface AipriPhoto {
   photo_seq: number;
-  play_date: string;        // "YYYY-MM-DD"
-  photo_file_url: string;   // CDN URL（Cookie不要）
+  play_date: string; // "YYYY-MM-DD"
+  photo_file_url: string; // CDN URL（Cookie不要）
   thumb_file_url: string;
   page_path: string;
   friend_card_flg: 0 | 1;
@@ -194,6 +209,7 @@ interface AipriPhoto {
 ```
 
 **注意事項**:
+
 - APIにはセッションCookieが必要
 - CDN（画像URL）にはCookieは不要
 - 取得可能なのは今月と先月のみ
@@ -208,20 +224,27 @@ Svelte 5 runesを使用したリアクティブ状態管理
 
 ```typescript
 export const sessionState = $state({
-  isLoggedIn: false,      // ログイン状態
-  isChecking: false,      // セッションチェック中フラグ
-  hasChecked: false,      // 一度チェック済みかどうか
-  profileImageUrl: null,  // プロフィール画像URL
-  error: null             // エラーメッセージ
+  isLoggedIn: false, // ログイン状態
+  isChecking: false, // セッションチェック中フラグ
+  hasChecked: false, // 一度チェック済みかどうか
+  profileImageUrl: null, // プロフィール画像URL
+  error: null, // エラーメッセージ
 });
 ```
 
 **公開関数**:
+
+- `loadAccounts()` - 保存済みアカウントと activeAccountId を同期
 - `checkSession(force?: boolean)` - セッション有効性チェック（force=trueで強制再チェック）
-- `login(credentials)` - ログイン実行
+- `login(credentials)` - 既存アカウントの切替または新規追加を実行
+- `addAccount(credentials)` - アカウント追加
+- `updateAccount(accountId, credentials)` - アカウント更新
+- `removeAccount(accountId)` - アカウント削除
+- `switchAccount(accountId)` - アクティブアカウント切替
 - `logout()` - ログアウト
 
 **ページ遷移時の動作**:
+
 - `hasChecked` フラグにより、一度チェック済みなら再チェックをスキップ
 - ログイン済みの場合もスキップして即座に表示
 
@@ -229,12 +252,12 @@ export const sessionState = $state({
 
 #### ログインフォーム
 
-| フィールド | バリデーション |
-|-----------|---------------|
-| カードID | `/^[0-9A-Z]{8}-[0-9A-Z]{7}$/` (16文字、ハイフン含む) |
-| 名前 | 1〜10文字 |
-| 誕生月 | 01〜12 |
-| 誕生日 | 01〜31（月に応じた上限） |
+| フィールド | バリデーション                                       |
+| ---------- | ---------------------------------------------------- |
+| カードID   | `/^[0-9A-Z]{8}-[0-9A-Z]{7}$/` (16文字、ハイフン含む) |
+| 名前       | 1〜10文字                                            |
+| 誕生月     | 01〜12                                               |
+| 誕生日     | 01〜31（月に応じた上限）                             |
 
 #### バリデーションタイミング
 
@@ -248,12 +271,12 @@ export const sessionState = $state({
 
 #### フォトインポートUI（ログイン後に表示）
 
-| 要素 | 説明 |
-|-----|------|
-| 対象月セレクト | 今月/先月を選択 |
-| インポート開始ボタン | クリックでダウンロード処理開始 |
-| プログレスバー | ダウンロード進捗を表示（現在/合計、スキップ数） |
-| 結果メッセージ | 完了/エラー/0件/全スキップ時の各種メッセージ |
+| 要素                 | 説明                                            |
+| -------------------- | ----------------------------------------------- |
+| 対象月セレクト       | 今月/先月を選択                                 |
+| インポート開始ボタン | クリックでダウンロード処理開始                  |
+| プログレスバー       | ダウンロード進捗を表示（現在/合計、スキップ数） |
+| 結果メッセージ       | 完了/エラー/0件/全スキップ時の各種メッセージ    |
 
 #### インポート処理フロー
 
@@ -314,12 +337,13 @@ interface AipriDownloadResult {
 1. **過去月の取得**: APIが対応すれば、より古い月のフォトも取得可能
 
 2. **追加エンドポイント**: 同じセッションを使って `/mypage` 配下の他のページにもアクセス可能
+
    ```javascript
    const response = await net.fetch(`${AIPRI_BASE_URL}/mypage/xxx`, {
      headers: {
-       'User-Agent': AIPRI_USER_AGENT,
-       'Cookie': store.get('aipriSession')
-     }
+       "User-Agent": AIPRI_USER_AGENT,
+       Cookie: store.get("aipriSession"),
+     },
    });
    ```
 
@@ -339,10 +363,10 @@ interface AipriDownloadResult {
 
 ## 変更履歴
 
-| 日付 | 変更内容 |
-|------|----------|
-| 2026-01-06 | 初期実装 |
-| 2026-01-06 | カードID形式を8-7に修正 |
-| 2026-01-06 | Cookie取得方法を修正（session.cookies API使用） |
-| 2026-01-06 | セッション永続化とページ遷移対応を追加 |
+| 日付       | 変更内容                                                               |
+| ---------- | ---------------------------------------------------------------------- |
+| 2026-01-06 | 初期実装                                                               |
+| 2026-01-06 | カードID形式を8-7に修正                                                |
+| 2026-01-06 | Cookie取得方法を修正（session.cookies API使用）                        |
+| 2026-01-06 | セッション永続化とページ遷移対応を追加                                 |
 | 2026-01-06 | フォトインポート機能を実装（aipri-fetch-photos, aipri-download-photo） |

@@ -2,13 +2,13 @@
 export const sessionState = $state({
   isLoggedIn: false,
   isChecking: false,
-  hasChecked: false,  // Track if initial session check has been done
+  hasChecked: false, // Track if initial session check has been done
   profileImageUrl: null as string | null,
   error: null as string | null,
   // Multi-account state
   accounts: [] as AipriAccount[],
-  activeAccountName: null as string | null,
-  isEditMode: false,  // For account deletion mode
+  activeAccountId: null as string | null,
+  isEditMode: false, // For account deletion mode
 });
 
 // Load all accounts from store
@@ -18,18 +18,24 @@ export async function loadAccounts(): Promise<void> {
   try {
     const result = await window.electronAPI.aipriGetAccounts();
     sessionState.accounts = result.accounts;
-    sessionState.activeAccountName = result.activeAccountName;
-    sessionState.isLoggedIn = result.accounts.length > 0 && !!result.activeAccountName;
+    sessionState.activeAccountId = result.activeAccountId;
+    sessionState.isLoggedIn = result.accounts.length > 0 && !!result.activeAccountId;
 
     // Set profile image URL for active account
-    if (result.activeAccountName) {
-      const activeAccount = result.accounts.find(acc => acc.name === result.activeAccountName);
+    if (result.activeAccountId) {
+      const activeAccount =
+        result.accounts.find((acc) => acc.accountId === result.activeAccountId) ||
+        result.accounts.find((acc) => acc.name === result.activeAccountName);
       if (activeAccount?.profileImagePath) {
         sessionState.profileImageUrl = `local-image://${encodeURIComponent(activeAccount.profileImagePath)}`;
+      } else {
+        sessionState.profileImageUrl = null;
       }
+    } else {
+      sessionState.profileImageUrl = null;
     }
   } catch (error) {
-    console.error('Load accounts error:', error);
+    console.error("Load accounts error:", error);
   }
 }
 
@@ -54,8 +60,8 @@ export async function checkSession(force = false): Promise<boolean> {
     await loadAccounts();
 
     // If we have accounts, check the active session
-    if (sessionState.accounts.length > 0 && sessionState.activeAccountName) {
-      const result = await window.electronAPI.aipriCheckSession() as AipriSessionCheckResult;
+    if (sessionState.accounts.length > 0 && sessionState.activeAccountId) {
+      const result = (await window.electronAPI.aipriCheckSession()) as AipriSessionCheckResult;
 
       if (result.valid) {
         sessionState.isLoggedIn = true;
@@ -71,7 +77,7 @@ export async function checkSession(force = false): Promise<boolean> {
       return false;
     }
   } catch (error) {
-    console.error('Session check error:', error);
+    console.error("Session check error:", error);
     sessionState.error = String(error);
     sessionState.isLoggedIn = false;
     return false;
@@ -84,26 +90,63 @@ export async function checkSession(force = false): Promise<boolean> {
 // Login to Aipri (adds or switches account)
 export async function login(credentials: AipriLoginCredentials): Promise<AipriLoginResult> {
   if (!window.electronAPI) {
-    return { success: false, error: 'Electron APIが利用できません' };
+    return { success: false, error: "Electron APIが利用できません" };
   }
 
   sessionState.error = null;
 
   try {
-    const result = await window.electronAPI.aipriLogin(credentials) as AipriLoginResult;
+    const accountsResult = await window.electronAPI.aipriGetAccounts();
+    const existingAccount =
+      accountsResult.accounts.find((account) => account.cardId === credentials.cardId) ||
+      accountsResult.accounts.find((account) => account.name === credentials.name);
 
-    if (result.success) {
-      sessionState.isLoggedIn = true;
-      sessionState.profileImageUrl = result.profileImageUrl || null;
-      // Reload accounts to get updated list
-      await loadAccounts();
+    let success = false;
+    let error: string | undefined;
+    let profileImageUrl: string | null = null;
+
+    if (existingAccount?.accountId) {
+      if (accountsResult.activeAccountId === existingAccount.accountId) {
+        const checkResult =
+          (await window.electronAPI.aipriCheckSession()) as AipriSessionCheckResult;
+        if (checkResult.valid) {
+          success = true;
+          profileImageUrl = checkResult.profileImageUrl || null;
+        } else {
+          const switchResult = await window.electronAPI.aipriSwitchAccount(
+            existingAccount.accountId,
+          );
+          success = switchResult.success;
+          error = switchResult.error;
+          profileImageUrl = switchResult.profileImageUrl || null;
+        }
+      } else {
+        const switchResult = await window.electronAPI.aipriSwitchAccount(existingAccount.accountId);
+        success = switchResult.success;
+        error = switchResult.error;
+        profileImageUrl = switchResult.profileImageUrl || null;
+      }
     } else {
-      sessionState.error = result.error || 'ログインに失敗しました';
+      const addResult = await window.electronAPI.aipriAddAccount(credentials);
+      success = addResult.success;
+      error = addResult.error;
     }
 
-    return result;
+    if (success) {
+      sessionState.isLoggedIn = true;
+      // Reload accounts to keep state aligned with backend updates.
+      await loadAccounts();
+      if (profileImageUrl) {
+        sessionState.profileImageUrl = profileImageUrl;
+      }
+      return { success: true, profileImageUrl: sessionState.profileImageUrl };
+    }
+
+    const resolvedError = error || "ログインに失敗しました";
+    sessionState.error = resolvedError;
+    return { success: false, error: resolvedError };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -111,9 +154,11 @@ export async function login(credentials: AipriLoginCredentials): Promise<AipriLo
 }
 
 // Add new account
-export async function addAccount(credentials: AipriLoginCredentials): Promise<AipriAddAccountResult> {
+export async function addAccount(
+  credentials: AipriLoginCredentials,
+): Promise<AipriAddAccountResult> {
   if (!window.electronAPI) {
-    return { success: false, error: 'Electron APIが利用できません' };
+    return { success: false, error: "Electron APIが利用できません" };
   }
 
   sessionState.error = null;
@@ -126,12 +171,12 @@ export async function addAccount(credentials: AipriLoginCredentials): Promise<Ai
       await loadAccounts();
       sessionState.isLoggedIn = true;
     } else {
-      sessionState.error = result.error || 'アカウント追加に失敗しました';
+      sessionState.error = result.error || "アカウント追加に失敗しました";
     }
 
     return result;
   } catch (error) {
-    console.error('Add account error:', error);
+    console.error("Add account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -139,11 +184,11 @@ export async function addAccount(credentials: AipriLoginCredentials): Promise<Ai
 }
 
 // Remove account
-export async function removeAccount(name: string): Promise<void> {
+export async function removeAccount(accountId: string): Promise<void> {
   if (!window.electronAPI) return;
 
   try {
-    await window.electronAPI.aipriRemoveAccount(name);
+    await window.electronAPI.aipriRemoveAccount(accountId);
     // Reload accounts
     await loadAccounts();
 
@@ -153,31 +198,34 @@ export async function removeAccount(name: string): Promise<void> {
       sessionState.profileImageUrl = null;
     }
   } catch (error) {
-    console.error('Remove account error:', error);
+    console.error("Remove account error:", error);
   }
 }
 
 // Update account credentials
-export async function updateAccount(oldName: string, credentials: AipriLoginCredentials): Promise<AipriUpdateAccountResult> {
+export async function updateAccount(
+  accountId: string,
+  credentials: AipriLoginCredentials,
+): Promise<AipriUpdateAccountResult> {
   if (!window.electronAPI) {
-    return { success: false, error: 'Electron APIが利用できません' };
+    return { success: false, error: "Electron APIが利用できません" };
   }
 
   sessionState.error = null;
 
   try {
-    const result = await window.electronAPI.aipriUpdateAccount(oldName, credentials);
+    const result = await window.electronAPI.aipriUpdateAccount(accountId, credentials);
 
     if (result.success) {
       // Reload accounts to get updated data
       await loadAccounts();
     } else {
-      sessionState.error = result.error || 'アカウント更新に失敗しました';
+      sessionState.error = result.error || "アカウント更新に失敗しました";
     }
 
     return result;
   } catch (error) {
-    console.error('Update account error:', error);
+    console.error("Update account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -185,19 +233,19 @@ export async function updateAccount(oldName: string, credentials: AipriLoginCred
 }
 
 // Switch to a different account
-export async function switchAccount(name: string): Promise<AipriSwitchAccountResult> {
+export async function switchAccount(accountId: string): Promise<AipriSwitchAccountResult> {
   if (!window.electronAPI) {
-    return { success: false, error: 'Electron APIが利用できません' };
+    return { success: false, error: "Electron APIが利用できません" };
   }
 
   sessionState.error = null;
   sessionState.isChecking = true;
 
   try {
-    const result = await window.electronAPI.aipriSwitchAccount(name);
+    const result = await window.electronAPI.aipriSwitchAccount(accountId);
 
     if (result.success) {
-      sessionState.activeAccountName = name;
+      sessionState.activeAccountId = result.activeAccountId || accountId;
       sessionState.isLoggedIn = true;
 
       // Update profile image URL
@@ -205,7 +253,7 @@ export async function switchAccount(name: string): Promise<AipriSwitchAccountRes
         sessionState.profileImageUrl = result.profileImageUrl;
       } else {
         // Get from local account data
-        const account = sessionState.accounts.find(acc => acc.name === name);
+        const account = sessionState.accounts.find((acc) => acc.accountId === accountId);
         if (account?.profileImagePath) {
           sessionState.profileImageUrl = `local-image://${encodeURIComponent(account.profileImagePath)}`;
         }
@@ -214,12 +262,12 @@ export async function switchAccount(name: string): Promise<AipriSwitchAccountRes
       // Reload accounts to get any updated profile images
       await loadAccounts();
     } else {
-      sessionState.error = result.error || 'アカウント切り替えに失敗しました';
+      sessionState.error = result.error || "アカウント切り替えに失敗しました";
     }
 
     return result;
   } catch (error) {
-    console.error('Switch account error:', error);
+    console.error("Switch account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -240,13 +288,13 @@ export async function logout(): Promise<void> {
   try {
     await window.electronAPI.aipriClearSession();
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error("Logout error:", error);
   }
 
   sessionState.isLoggedIn = false;
   sessionState.profileImageUrl = null;
   sessionState.error = null;
   sessionState.accounts = [];
-  sessionState.activeAccountName = null;
+  sessionState.activeAccountId = null;
   sessionState.isEditMode = false;
 }

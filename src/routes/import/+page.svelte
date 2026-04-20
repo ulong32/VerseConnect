@@ -3,10 +3,11 @@
 	import AccountSelector from '$lib/components/AccountSelector.svelte';
 	import {
 	  checkSession,
+	  loadAccounts,
 	  login,
 	  logout,
-	  updateAccount,
-	  sessionState
+	  sessionState,
+	  updateAccount
 	} from '$lib/stores/session.svelte';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
@@ -18,7 +19,7 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import { onMount } from 'svelte';
-    import { fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 
 	// Track if navigating to root for conditional out transition
 	let navigatingToRoot = $state(false);
@@ -111,7 +112,12 @@
 
 		try {
 			// Fetch photo list (backend handles session retry automatically)
-			const fetchResult = await window.electronAPI.aipriFetchPhotos(selectedYm);
+			const fetchResult = await window.electronAPI.aipriFetchPhotos(selectedYm) as AipriFetchPhotosResult & { reloggedIn?: boolean };
+
+			if (fetchResult.reloggedIn) {
+				// Keep renderer state in sync with store when backend auto re-login occurred.
+				await loadAccounts();
+			}
 
 			if (!fetchResult.success || !fetchResult.photos) {
 				importResult = { success: false, message: fetchResult.error || 'フォトリストの取得に失敗しました' };
@@ -324,7 +330,7 @@
 
 		if (editingAccount) {
 			// Update existing account
-			const result = await updateAccount(editingAccount.name, credentials);
+			const result = await updateAccount(editingAccount.accountId, credentials);
 			isLoggingIn = false;
 
 			if (result.success) {
@@ -412,7 +418,7 @@
 					<!-- Account Selector -->
 					<div class="mb-6">
 						<p class="text-gray-400 text-sm mb-3">アカウント</p>
-						<AccountSelector 
+						<AccountSelector
 							onAddClick={() => showAddForm = true}
 							onEditClick={(account) => {
 								editingAccount = account;

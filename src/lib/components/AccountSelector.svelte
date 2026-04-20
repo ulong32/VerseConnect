@@ -1,18 +1,18 @@
 <script lang="ts">
+  import {
+    removeAccount,
+    sessionState,
+    switchAccount,
+    toggleEditMode
+  } from '$lib/stores/session.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
-  import PlusIcon from '@lucide/svelte/icons/plus';
+  import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
   import PencilIcon from '@lucide/svelte/icons/pencil';
   import PencilLineIcon from '@lucide/svelte/icons/pencil-line';
-  import XIcon from '@lucide/svelte/icons/x';
+  import PlusIcon from '@lucide/svelte/icons/plus';
   import UserIcon from '@lucide/svelte/icons/user';
-  import CircleCheckBigIcon from '@lucide/svelte/icons/circle-check-big';
-	import { Avatar } from '@skeletonlabs/skeleton-svelte';
-	import {
-		sessionState,
-		switchAccount,
-		removeAccount,
-		toggleEditMode
-	} from '$lib/stores/session.svelte';
+  import XIcon from '@lucide/svelte/icons/x';
+  import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
 	interface Props {
 		onAddClick: () => void;
@@ -23,18 +23,18 @@
 
 	let isSwitching = $state<string | null>(null);
 
-	async function handleAccountClick(name: string) {
+  async function handleAccountClick(accountId: string) {
 		if (sessionState.isEditMode) return;
-		if (name === sessionState.activeAccountName) return;
+    if (accountId === sessionState.activeAccountId) return;
 
-		isSwitching = name;
-		await switchAccount(name);
+    isSwitching = accountId;
+    await switchAccount(accountId);
 		isSwitching = null;
 	}
 
-	async function handleRemoveClick(name: string, e: Event) {
+  async function handleRemoveClick(account: AipriAccount, e: Event) {
 		e.stopPropagation();
-		if (name === sessionState.activeAccountName) {
+    if (account.accountId === sessionState.activeAccountId) {
 			// Can't remove active account if it's the only one
 			if (sessionState.accounts.length === 1) {
 				return;
@@ -44,14 +44,14 @@
 		// Show confirmation dialog
 		const confirmed = await window.electronAPI.showConfirmDialog({
 			title: 'VerseConnect',
-			message: `アカウント「${name}」を削除しますか？\nこの操作は取り消せません。`,
+      message: `アカウント「${account.name}」を削除しますか？\nこの操作は取り消せません。`,
 			okLabel: '削除',
 			cancelLabel: 'キャンセル'
 		});
 
 		if (!confirmed) return;
 
-		await removeAccount(name);
+    await removeAccount(account.accountId);
 
 		// Exit edit mode if no accounts left
 		if (sessionState.accounts.length === 0) {
@@ -68,8 +68,8 @@
 
 	function getProfileImageUrl(account: AipriAccount): string | null {
 		if (account.profileImagePath) {
-			// Add cache-busting parameter using account name hash
-			const cacheBust = account.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+			// Add cache-busting parameter using account id hash.
+			const cacheBust = account.accountId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
 			return `local-image://${encodeURIComponent(account.profileImagePath)}?t=${cacheBust}`;
 		}
 		return null;
@@ -78,17 +78,17 @@
 
 <div class="flex items-center gap-2 flex-wrap">
 	<!-- Account icons -->
-	{#each sessionState.accounts as account (account.name)}
+	{#each sessionState.accounts as account (account.accountId)}
 		<div>
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="relative group cursor-pointer transition-all duration-200 rounded-full"
-        class:opacity-50={isSwitching && isSwitching !== account.name}
-        class:ring-2={account.name === sessionState.activeAccountName}
-        class:ring-purple-500={account.name === sessionState.activeAccountName}
-        class:grayscale={isSwitching && isSwitching !== account.name}
-        onclick={() => handleAccountClick(account.name)}
-        onkeydown={(e) => e.key === 'Enter' && handleAccountClick(account.name)}
+        class:opacity-50={isSwitching && isSwitching !== account.accountId}
+        class:ring-2={account.accountId === sessionState.activeAccountId}
+        class:ring-purple-500={account.accountId === sessionState.activeAccountId}
+        class:grayscale={isSwitching && isSwitching !== account.accountId}
+        onclick={() => handleAccountClick(account.accountId)}
+        onkeydown={(e) => e.key === 'Enter' && handleAccountClick(account.accountId)}
         role="button"
         tabindex={isSwitching !== null ? -1 : 0}
         title={account.name}
@@ -105,7 +105,7 @@
           </Avatar.Fallback>
         </Avatar>
         <!-- Active checkmark -->
-        {#if account.name === sessionState.activeAccountName && !sessionState.isEditMode}
+        {#if account.accountId === sessionState.activeAccountId && !sessionState.isEditMode}
           <div class="absolute -top-1 -right-1 size-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
             <CheckIcon class="size-3 text-white" />
           </div>
@@ -125,12 +125,12 @@
           </span>
         {/if}
         <!-- Remove button (edit mode) - top right -->
-        {#if sessionState.isEditMode && !(account.name === sessionState.activeAccountName && sessionState.accounts.length === 1)}
+        {#if sessionState.isEditMode && !(account.accountId === sessionState.activeAccountId && sessionState.accounts.length === 1)}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <span
             class="absolute -top-1 -right-1 size-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors cursor-pointer"
-            onclick={(e) => handleRemoveClick(account.name, e)}
-            onkeydown={(e) => e.key === 'Enter' && handleRemoveClick(account.name, e)}
+            onclick={(e) => handleRemoveClick(account, e)}
+            onkeydown={(e) => e.key === 'Enter' && handleRemoveClick(account, e)}
             role="button"
             tabindex="0"
             title="削除"
@@ -139,7 +139,7 @@
           </span>
         {/if}
         <!-- Loading indicator -->
-        {#if isSwitching === account.name}
+        {#if isSwitching === account.accountId}
           <div class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
             <div class="size-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
           </div>
