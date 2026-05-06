@@ -2,6 +2,7 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ImageIcon from '@lucide/svelte/icons/image';
 	import TagIcon from '@lucide/svelte/icons/tag';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
 	import UserRoundCogIcon from '@lucide/svelte/icons/user-round-cog';
@@ -22,6 +23,7 @@
 		oninputchange: (value: string) => void;
 		ontaginputchange: (value: string) => void;
 		onselectfriendcard: (file: File) => void;
+		onremovefriendcard: () => void;
 	}
 
 	let {
@@ -38,7 +40,8 @@
 		onsave,
 		oninputchange,
 		ontaginputchange,
-		onselectfriendcard
+		onselectfriendcard,
+		onremovefriendcard
 	}: Props = $props();
 
 	let itemImageError = $state(false);
@@ -102,7 +105,7 @@
 	function handleItemImageError(e: Event, item: string) {
 		const img = e.currentTarget as HTMLImageElement;
 		const staticSrc = getStaticItemImageSrc(item);
-		
+
 		if (img.src.startsWith('item-image://') && img.src !== staticSrc) {
 			img.src = staticSrc;
 		} else {
@@ -179,7 +182,7 @@
 	<!-- Character Selection -->
 	<div class="mb-4">
 		<span class="block text-white text-sm font-medium mb-2">キャラクター</span>
-		
+
 		<!-- Preset Characters -->
 		{#if presetCharacters.length > 0}
 			<div class="flex items-center gap-2 mb-2 flex-wrap">
@@ -340,9 +343,23 @@
 					<UploadIcon class="size-6 text-purple-400 animate-bounce" />
 					<span class="text-purple-400 text-sm">ここにドロップ</span>
 				{:else if currentMetadata.friend_card}
-					<div class="flex items-center gap-1 text-green-400">
-						<CheckIcon class="size-4" />
-						<span class="text-sm truncate max-w-32">{currentMetadata.friend_card}</span>
+					<div class="flex items-center gap-2">
+						<div class="flex items-center gap-1 text-green-400">
+							<CheckIcon class="size-4" />
+							<span class="text-sm truncate max-w-32">{currentMetadata.friend_card}</span>
+						</div>
+						<button
+							type="button"
+							class="p-1 rounded hover:bg-white/10 text-gray-300 hover:text-red-300 transition-colors"
+							title="フレンドカードを削除"
+							onclick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onremovefriendcard();
+							}}
+						>
+							<Trash2Icon class="size-4" />
+						</button>
 					</div>
 					<span class="text-gray-500 text-xs">クリックまたはD&Dで変更</span>
 				{:else}

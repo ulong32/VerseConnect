@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Friend card
   saveFriendCard: (folderPath, filename, base64Data) =>
     ipcRenderer.invoke("save-friend-card", folderPath, filename, base64Data),
+  deleteFriendCard: (folderPath, filename) =>
+    ipcRenderer.invoke("delete-friend-card", folderPath, filename),
 
   // Aipri API
   aipriCheckSession: () => ipcRenderer.invoke("aipri-check-session"),

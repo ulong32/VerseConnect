@@ -37,6 +37,7 @@
 		ontaginputchange: (value: string) => void;
 		ontoggleeditor: () => void;
 		onselectfriendcard: (file: File) => void;
+		onremovefriendcard: () => void;
 	}
 
 	let {
@@ -62,7 +63,8 @@
 		oninputchange,
 		ontaginputchange,
 		ontoggleeditor,
-		onselectfriendcard
+		onselectfriendcard,
+		onremovefriendcard
 	}: Props = $props();
 
 	// Toggle between main image and friend card
@@ -291,6 +293,7 @@
 								{oninputchange}
 								{ontaginputchange}
 								{onselectfriendcard}
+								{onremovefriendcard}
 							/>
 						</div>
 					{/if}

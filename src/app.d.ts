@@ -157,6 +157,7 @@ declare global {
       filename: string,
       base64Data: string,
     ) => Promise<FriendCardResult>;
+    deleteFriendCard: (folderPath: string, filename: string) => Promise<FriendCardResult>;
     // Aipri API
     aipriCheckSession: () => Promise<AipriSessionCheckResult>;
     aipriClearSession: () => Promise<AipriClearSessionResult>;

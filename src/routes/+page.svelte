@@ -368,6 +368,37 @@
 		reader.readAsDataURL(file);
 	}
 
+	// Remove friend card file and metadata
+	async function removeFriendCard() {
+		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
+		if (!currentMetadata.friend_card) return;
+
+		const confirmed = await window.electronAPI.showConfirmDialog({
+			title: '確認',
+			message: `フレンドカード「${currentMetadata.friend_card}」を削除しますか？\n画像ファイルも削除されます。`,
+			okLabel: '削除',
+			cancelLabel: 'キャンセル'
+		});
+
+		if (!confirmed) return;
+
+		const result = await window.electronAPI.deleteFriendCard(
+			settingsState.folderPath,
+			currentMetadata.friend_card
+		);
+
+		if (!result.success) {
+			await window.electronAPI.showConfirmDialog({
+				title: 'エラー',
+				message: `フレンドカードの削除に失敗しました。\n${result.error ?? ''}`.trim(),
+				okLabel: 'OK'
+			});
+			return;
+		}
+
+		currentMetadata.friend_card = undefined;
+	}
+
 	// Save metadata
 	async function saveMetadata() {
 		if (!window.electronAPI || !settingsState.folderPath || !selectedImage) return;
@@ -612,6 +643,7 @@
 		ontaginputchange={(v) => newTagInput = v}
 		ontoggleeditor={() => showMetadataEditor = !showMetadataEditor}
 		onselectfriendcard={selectFriendCard}
+		onremovefriendcard={removeFriendCard}
 	/>
 {/if}
 
