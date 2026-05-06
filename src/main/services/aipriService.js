@@ -590,6 +590,14 @@ export const downloadPhoto = async (url, filename, folderPath) => {
     return { success: false, error: "無効なファイル名です" };
   }
 
+  try {
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+  } catch (error) {
+    return { success: false, error: `フォルダの作成に失敗しました: ${String(error)}` };
+  }
+
   const targetPath = path.join(folderPath, safeFilename);
 
   // Check if file already exists
