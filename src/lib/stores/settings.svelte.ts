@@ -1,15 +1,36 @@
 // Character presets
-export const CHARACTER_PRESETS = [ 'いのり', 'あおい', 'ぐみ', 'おりびあ', 'ナナ', 'エマ', 'ひまり', 'みつき', 'つむぎ', 'サクラ', 'タマキ', 'アイリ', 'リンリン', 'チィ', 'じゅりあ', 'える', 'すばる', 'おとめ', 'ビビ', 'リング'];
+export const CHARACTER_PRESETS = [
+  "いのり",
+  "あおい",
+  "ぐみ",
+  "おりびあ",
+  "ナナ",
+  "エマ",
+  "ひまり",
+  "みつき",
+  "つむぎ",
+  "サクラ",
+  "タマキ",
+  "アイリ",
+  "リンリン",
+  "チィ",
+  "じゅりあ",
+  "える",
+  "すばる",
+  "おとめ",
+  "ビビ",
+  "リング",
+];
 
 // Item image constants
-export const ITEM_IMAGE_SUFFIX = '.webp';
+export const ITEM_IMAGE_SUFFIX = ".webp";
 
 // Reactive state using Svelte 5 runes
 export const settingsState = $state({
-  folderPath: '',
-  itemImageFolderPath: '',
+  folderPath: "",
+  itemImageFolderPath: "",
   customCharacters: [] as string[],
-  customTags: [] as string[]
+  customTags: [] as string[],
 });
 
 // Derived value: all characters (presets + custom) - exported as getter function
@@ -97,17 +118,21 @@ export async function addCustomCharacter(name: string): Promise<boolean> {
   settingsState.customCharacters = [...settingsState.customCharacters, trimmed];
 
   if (window.electronAPI) {
-    await window.electronAPI.setSettings({ customCharacters: $state.snapshot(settingsState.customCharacters) });
+    await window.electronAPI.setSettings({
+      customCharacters: $state.snapshot(settingsState.customCharacters),
+    });
   }
   return true;
 }
 
 // Remove a custom character
 export async function removeCustomCharacter(name: string): Promise<void> {
-  settingsState.customCharacters = settingsState.customCharacters.filter(c => c !== name);
+  settingsState.customCharacters = settingsState.customCharacters.filter((c) => c !== name);
 
   if (window.electronAPI) {
-    await window.electronAPI.setSettings({ customCharacters: $state.snapshot(settingsState.customCharacters) });
+    await window.electronAPI.setSettings({
+      customCharacters: $state.snapshot(settingsState.customCharacters),
+    });
   }
 }
 
@@ -128,7 +153,7 @@ export async function addCustomTag(name: string): Promise<boolean> {
 
 // Remove a custom tag
 export async function removeCustomTag(name: string): Promise<void> {
-  settingsState.customTags = settingsState.customTags.filter(t => t !== name);
+  settingsState.customTags = settingsState.customTags.filter((t) => t !== name);
 
   if (window.electronAPI) {
     await window.electronAPI.setSettings({ customTags: $state.snapshot(settingsState.customTags) });

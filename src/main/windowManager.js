@@ -1,12 +1,12 @@
-import { BrowserWindow } from 'electron';
-import windowStateManager from 'electron-window-state';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { BrowserWindow } from "electron";
+import windowStateManager from "electron-window-state";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // ESM shim for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '../../'); // Assuming src/main/windowManager.js -> root is ../../
+const PROJECT_ROOT = path.resolve(__dirname, "../../"); // Assuming src/main/windowManager.js -> root is ../../
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
@@ -25,10 +25,10 @@ export function createWindow(isDev) {
   });
 
   const newWindow = new BrowserWindow({
-    backgroundColor: 'whitesmoke',
-    titleBarStyle: 'hidden',
-    title: 'VerseConnect',
-    icon: path.join(PROJECT_ROOT, 'src/lib/assets/favicon.png'),
+    backgroundColor: "whitesmoke",
+    titleBarStyle: "hidden",
+    title: "VerseConnect",
+    icon: path.join(PROJECT_ROOT, "src/lib/assets/favicon.png"),
     autoHideMenuBar: true,
     trafficLightPosition: {
       x: 17,
@@ -41,7 +41,7 @@ export function createWindow(isDev) {
       nodeIntegration: false,
       spellcheck: false,
       devTools: isDev,
-      preload: path.join(PROJECT_ROOT, 'src/preload.cjs'),
+      preload: path.join(PROJECT_ROOT, "src/preload.cjs"),
     },
     x: windowState.x,
     y: windowState.y,
@@ -56,16 +56,16 @@ export function createWindow(isDev) {
 
   windowState.manage(newWindow);
 
-  newWindow.once('ready-to-show', () => {
+  newWindow.once("ready-to-show", () => {
     newWindow.show();
     newWindow.focus();
   });
 
-  newWindow.on('close', () => {
+  newWindow.on("close", () => {
     windowState.saveState(newWindow);
   });
 
-  newWindow.once('closed', () => {
+  newWindow.once("closed", () => {
     mainWindow = null;
   });
 

@@ -1,40 +1,41 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin '@tailwindcss/forms';
 
-@import '@skeletonlabs/skeleton'; 
-@import '@skeletonlabs/skeleton-svelte'; 
-@import '@skeletonlabs/skeleton/themes/nouveau';
+@import "@skeletonlabs/skeleton";
+@import "@skeletonlabs/skeleton-svelte";
+@import "@skeletonlabs/skeleton/themes/nouveau";
 
 /* Custom Fonts */
 @font-face {
-	font-family: 'M PLUS Rounded 1c';
-	src: url('/MPLUSRounded1c_subset.woff2') format('woff2');
-	font-weight: normal;
-	font-style: normal;
-	font-display: swap;
+  font-family: "M PLUS Rounded 1c";
+  src: url("/MPLUSRounded1c_subset.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
 .font-mplus-rounded {
-	font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-family: "M PLUS Rounded 1c", sans-serif;
 }
 
 /* Global styles for gallery app */
 :root {
-	color-scheme: dark;
+  color-scheme: dark;
 }
 
-html, body {
-	margin: 0;
-	padding: 0;
-	height: 100%;
-	overflow-x: hidden;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
-	background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-	min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
 }
 
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }

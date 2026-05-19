@@ -32,12 +32,14 @@ VerseConnect/
 The project strictly separates the **Main Process** (Electron/Node.js) and the **Renderer Process** (SvelteKit/Browser).
 
 ### Main Process (`src/main`)
+
 - Handles all native capabilities: File System access, HTTP requests (bypassing CORS), Shell integration.
 - Exposes functionality to the Renderer via **IPC (Inter-Process Communication)**.
 - **Entry Point**: `src/main/index.js`
 - See [Main Process Documentation](./main_process.md) for details.
 
 ### Renderer Process (`src/lib`, `src/routes`)
+
 - Handles UI, Interaction, and State Management.
 - Uses **Svelte 5 Runes** for reactivity.
 - Communicate with Main Process strictly via `window.electronAPI`.

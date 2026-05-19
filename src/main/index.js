@@ -1,38 +1,46 @@
-import { app, ipcMain, net, protocol } from 'electron';
-import serve from 'electron-serve';
-import path from 'path';
-import { pathToFileURL } from 'url';
-import { setupAipriHandlers } from './handlers/aipriHandlers.js';
-import { setupAppHandlers } from './handlers/appHandlers.js';
-import { setupFileHandlers } from './handlers/fileHandlers.js';
-import { initStore } from './store.js';
-import { createWindow, getMainWindow } from './windowManager.js';
+import { app, ipcMain, net, protocol } from "electron";
+import serve from "electron-serve";
+import path from "path";
+import { pathToFileURL } from "url";
+import { setupAipriHandlers } from "./handlers/aipriHandlers.js";
+import { setupAppHandlers } from "./handlers/appHandlers.js";
+import { setupFileHandlers } from "./handlers/fileHandlers.js";
+import { initStore } from "./store.js";
+import { createWindow, getMainWindow } from "./windowManager.js";
 
 /** Allowed image file extensions for the local-image:// protocol */
-const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.ico']);
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".ico",
+]);
 
-const serveURL = serve({ directory: '.' });
+const serveURL = serve({ directory: "." });
 const port = process.env.PORT || 5173;
 const dev = !app.isPackaged;
 
 // カスタムプロトコルの登録（appのreadyイベント前に呼ぶ必要がある）
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: 'local-image',
+    scheme: "local-image",
     privileges: {
       secure: true,
       supportFetchAPI: true,
-      stream: true
-    }
+      stream: true,
+    },
   },
   {
-    scheme: 'item-image',
+    scheme: "item-image",
     privileges: {
       secure: true,
       supportFetchAPI: true,
-      stream: true
-    }
-  }
+      stream: true,
+    },
+  },
 ]);
 
 /**
@@ -42,7 +50,7 @@ function loadVite(port) {
   const mainWindow = getMainWindow();
   if (!mainWindow) return;
   mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
-    console.log('Error loading URL, retrying', e);
+    console.log("Error loading URL, retrying", e);
     setTimeout(() => {
       loadVite(port);
     }, 200);
@@ -56,47 +64,47 @@ function createMainWindow() {
   else serveURL(mainWindow);
 }
 
-app.once('ready', async () => {
+app.once("ready", async () => {
   // カスタムプロトコルハンドラーを登録
-  protocol.handle('local-image', (request) => {
+  protocol.handle("local-image", (request) => {
     // Strip query parameters and decode file path
-    const urlWithoutProtocol = request.url.replace('local-image://', '');
-    const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
+    const urlWithoutProtocol = request.url.replace("local-image://", "");
+    const urlWithoutQuery = urlWithoutProtocol.split("?")[0];
     let filePath;
     try {
       filePath = decodeURIComponent(urlWithoutQuery);
     } catch {
-      return new Response('Bad Request', { status: 400 });
+      return new Response("Bad Request", { status: 400 });
     }
 
     // Security: only allow image file extensions to prevent arbitrary file reads
     const ext = path.extname(filePath).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
-      return new Response('Forbidden', { status: 403 });
+      return new Response("Forbidden", { status: 403 });
     }
 
     return net.fetch(pathToFileURL(filePath).toString());
   });
 
   // アイテム画像用カスタムプロトコルハンドラー
-  protocol.handle('item-image', async (request) => {
-    const { getStore } = await import('./store.js');
+  protocol.handle("item-image", async (request) => {
+    const { getStore } = await import("./store.js");
     const store = getStore();
-    const itemImageFolderPath = store.get('itemImageFolderPath');
+    const itemImageFolderPath = store.get("itemImageFolderPath");
 
     if (!itemImageFolderPath) {
       // Return 404 if no folder configured
-      return new Response('Item image folder not configured', { status: 404 });
+      return new Response("Item image folder not configured", { status: 404 });
     }
 
     // URL format: item-image://path/to/item_suffix.webp
-    const urlWithoutProtocol = request.url.replace('item-image://', '');
-    const urlWithoutQuery = urlWithoutProtocol.split('?')[0];
+    const urlWithoutProtocol = request.url.replace("item-image://", "");
+    const urlWithoutQuery = urlWithoutProtocol.split("?")[0];
     let relativePath;
     try {
       relativePath = decodeURIComponent(urlWithoutQuery);
     } catch {
-      return new Response('Bad Request', { status: 400 });
+      return new Response("Bad Request", { status: 400 });
     }
 
     // Construct the full file path and normalize it
@@ -106,14 +114,14 @@ app.once('ready', async () => {
     // Security: ensure the resolved path stays within the configured folder
     // Use path.relative() to detect traversal attempts — safe on all platforms
     const rel = path.relative(resolvedBase, filePath);
-    if (rel.startsWith('..') || path.isAbsolute(rel)) {
-      return new Response('Forbidden', { status: 403 });
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      return new Response("Forbidden", { status: 403 });
     }
 
     // Security: only allow image file extensions
     const ext = path.extname(filePath).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
-      return new Response('Forbidden', { status: 403 });
+      return new Response("Forbidden", { status: 403 });
     }
 
     return net.fetch(pathToFileURL(filePath).toString());
@@ -129,19 +137,19 @@ app.once('ready', async () => {
   createMainWindow();
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (!getMainWindow()) {
     createMainWindow();
   }
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });
 
 // Legacy test IPC
-ipcMain.on('to-main', (event, count) => {
+ipcMain.on("to-main", (event, count) => {
   const mainWindow = getMainWindow();
   if (!mainWindow) return;
-  return mainWindow.webContents.send('from-main', `next count is ${count + 1}`);
+  return mainWindow.webContents.send("from-main", `next count is ${count + 1}`);
 });
