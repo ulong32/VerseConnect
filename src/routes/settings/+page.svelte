@@ -34,7 +34,7 @@
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-    import ArrowRight from "@lucide/svelte/icons/arrow-right";
+  import ArrowRight from "@lucide/svelte/icons/arrow-right";
 
   // Track if navigating to root for conditional out transition
   let navigatingToRoot = $state(false);
