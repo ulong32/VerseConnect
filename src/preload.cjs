@@ -54,4 +54,40 @@ contextBridge.exposeInMainWorld("electronAPI", {
   windowMinimize: () => ipcRenderer.send("window-minimize"),
   windowMaximize: () => ipcRenderer.send("window-maximize"),
   windowClose: () => ipcRenderer.send("window-close"),
+
+  // Auto-updater API
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  checkForUpdates: () => ipcRenderer.invoke("update-check"),
+  downloadUpdate: () => ipcRenderer.invoke("update-download"),
+  quitAndInstall: () => ipcRenderer.invoke("update-install"),
+
+  // Auto-updater events (main -> renderer)
+  onUpdateChecking: (callback) => {
+    ipcRenderer.on("update-checking", callback);
+    return () => ipcRenderer.removeListener("update-checking", callback);
+  },
+  onUpdateAvailable: (callback) => {
+    const handler = (_e, info) => callback(info);
+    ipcRenderer.on("update-available", handler);
+    return () => ipcRenderer.removeListener("update-available", handler);
+  },
+  onUpdateNotAvailable: (callback) => {
+    ipcRenderer.on("update-not-available", callback);
+    return () => ipcRenderer.removeListener("update-not-available", callback);
+  },
+  onDownloadProgress: (callback) => {
+    const handler = (_e, progress) => callback(progress);
+    ipcRenderer.on("update-download-progress", handler);
+    return () => ipcRenderer.removeListener("update-download-progress", handler);
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = (_e, info) => callback(info);
+    ipcRenderer.on("update-downloaded", handler);
+    return () => ipcRenderer.removeListener("update-downloaded", handler);
+  },
+  onUpdateError: (callback) => {
+    const handler = (_e, message) => callback(message);
+    ipcRenderer.on("update-error", handler);
+    return () => ipcRenderer.removeListener("update-error", handler);
+  },
 });

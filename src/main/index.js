@@ -5,7 +5,8 @@ import { pathToFileURL } from "url";
 import { setupAipriHandlers } from "./handlers/aipriHandlers.js";
 import { setupAppHandlers } from "./handlers/appHandlers.js";
 import { setupFileHandlers } from "./handlers/fileHandlers.js";
-import { initStore } from "./store.js";
+import { setupUpdateService } from "./services/updateService.js";
+import { getStore, initStore } from "./store.js";
 import { createWindow, getMainWindow } from "./windowManager.js";
 
 /** Allowed image file extensions for the local-image:// protocol */
@@ -133,6 +134,11 @@ app.once("ready", async () => {
   setupFileHandlers();
   setupAipriHandlers();
   setupAppHandlers(getMainWindow);
+
+  // Setup update service
+  const store = getStore();
+  const autoCheck = store.get("autoUpdateCheck") !== false;
+  setupUpdateService(getMainWindow, { autoCheck });
 
   createMainWindow();
 });

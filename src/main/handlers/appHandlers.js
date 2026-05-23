@@ -54,6 +54,8 @@ export function setupAppHandlers(getMainWindow) {
       itemImageFolderPath: store.get("itemImageFolderPath") || "",
       customCharacters: store.get("customCharacters") || [],
       customTags: store.get("customTags") || [],
+      autoUpdateCheck: store.get("autoUpdateCheck") !== false,
+      debugMode: store.get("debugMode") === true,
     };
   });
 
@@ -71,6 +73,12 @@ export function setupAppHandlers(getMainWindow) {
     }
     if (settings.itemImageFolderPath !== undefined) {
       store.set("itemImageFolderPath", settings.itemImageFolderPath);
+    }
+    if (settings.autoUpdateCheck !== undefined) {
+      store.set("autoUpdateCheck", settings.autoUpdateCheck);
+    }
+    if (settings.debugMode !== undefined) {
+      store.set("debugMode", settings.debugMode);
     }
     return true;
   });

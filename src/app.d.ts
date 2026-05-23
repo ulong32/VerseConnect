@@ -23,11 +23,25 @@ declare global {
     [imageName: string]: ImageMetadata;
   }
 
+  interface UpdateInfo {
+    version: string;
+    releaseNotes?: string;
+  }
+
+  interface UpdateProgress {
+    percent: number;
+    bytesPerSecond: number;
+    total: number;
+    transferred: number;
+  }
+
   interface Settings {
     folderPath: string;
     itemImageFolderPath: string;
     customCharacters: string[];
     customTags: string[]; // App-wide tag presets
+    autoUpdateCheck: boolean;
+    debugMode: boolean;
   }
 
   interface SelectFileOptions {
@@ -180,6 +194,17 @@ declare global {
     windowMinimize: () => void;
     windowMaximize: () => void;
     windowClose: () => void;
+    // Auto-updater
+    getAppVersion: () => Promise<string>;
+    checkForUpdates: () => Promise<void>;
+    downloadUpdate: () => Promise<void>;
+    quitAndInstall: () => void;
+    onUpdateChecking: (callback: () => void) => () => void;
+    onUpdateAvailable: (callback: (info: UpdateInfo) => void) => () => void;
+    onUpdateNotAvailable: (callback: () => void) => () => void;
+    onDownloadProgress: (callback: (progress: UpdateProgress) => void) => () => void;
+    onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => () => void;
+    onUpdateError: (callback: (message: string) => void) => () => void;
   }
 
   namespace App {

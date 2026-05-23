@@ -1,6 +1,11 @@
 {
   "appId": "net.ulong32.verseconnect",
   "productName": "VerseConnect",
+  "publish": {
+    "provider": "github",
+    "owner": "ulong32",
+    "repo": "VerseConnect"
+  },
   "directories": {
     "output": "dist"
   },

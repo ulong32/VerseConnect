@@ -31,6 +31,8 @@ export const settingsState = $state({
   itemImageFolderPath: "",
   customCharacters: [] as string[],
   customTags: [] as string[],
+  autoUpdateCheck: true,
+  debugMode: false,
 });
 
 // Derived value: all characters (presets + custom) - exported as getter function
@@ -65,6 +67,28 @@ export async function loadSettings(): Promise<void> {
   }
   if (settings.itemImageFolderPath) {
     settingsState.itemImageFolderPath = settings.itemImageFolderPath;
+  }
+  if (settings.autoUpdateCheck !== undefined) {
+    settingsState.autoUpdateCheck = settings.autoUpdateCheck;
+  }
+  if (settings.debugMode !== undefined) {
+    settingsState.debugMode = settings.debugMode;
+  }
+}
+
+// Set auto update check preference
+export async function setAutoUpdateCheck(enabled: boolean): Promise<void> {
+  settingsState.autoUpdateCheck = enabled;
+  if (window.electronAPI) {
+    await window.electronAPI.setSettings({ autoUpdateCheck: enabled });
+  }
+}
+
+// Set debug mode preference
+export async function setDebugMode(enabled: boolean): Promise<void> {
+  settingsState.debugMode = enabled;
+  if (window.electronAPI) {
+    await window.electronAPI.setSettings({ debugMode: enabled });
   }
 }
 

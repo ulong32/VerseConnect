@@ -11,8 +11,19 @@
 	import { Avatar, Portal, Tooltip } from '@skeletonlabs/skeleton-svelte';
 	import './layout.css';
 	import LuminaPng from './lumina.png';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { initUpdateListeners, updateState, quitAndInstall } from '$lib/stores/update.svelte';
+	import InfoIcon from '@lucide/svelte/icons/info';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
+	import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
+
 	let { children } = $props();
+
+	onMount(() => {
+		const cleanup = initUpdateListeners();
+		return cleanup;
+	});
 
 	// Konami Code: ↑↑↓↓←→←→BA
 	const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
@@ -155,6 +166,76 @@
 	</div>
 </footer>
 </div>
+
+<!-- Floating Auto-updater Banner (Bottom Left) -->
+{#if updateState.status === 'downloading' || updateState.status === 'downloaded' || (updateState.status === 'error' && updateState.errorMessage)}
+	<div
+		class="fixed bottom-6 left-6 max-w-sm w-80 bg-[#1e1e2e]/95 border border-purple-500/30 rounded-xl p-4 shadow-2xl backdrop-blur-md z-50 overflow-hidden"
+		in:fly={{ y: 50, duration: 400 }}
+		out:fade={{ duration: 250 }}
+	>
+		<!-- Neon glow line -->
+		<div class="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-purple-500 via-indigo-500 to-pink-500"></div>
+
+		<div class="flex items-start gap-3">
+			{#if updateState.status === 'downloading'}
+				<div class="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg animate-pulse">
+					<DownloadIcon class="size-5" />
+				</div>
+				<div class="flex-1">
+					<h4 class="text-sm font-semibold text-white">アップデートをダウンロード中</h4>
+					<p class="text-xs text-gray-400 mt-0.5">VerseConnect v{updateState.newVersion}</p>
+					
+					<!-- Progress bar -->
+					<div class="w-full bg-white/10 rounded-full h-1.5 mt-3 overflow-hidden">
+						<div 
+							class="bg-linear-to-r from-purple-500 to-indigo-500 h-1.5 rounded-full transition-all duration-300"
+							style="width: {updateState.progress}%"
+						></div>
+					</div>
+					<div class="flex justify-between items-center mt-1.5">
+						<span class="text-[10px] text-gray-500">進捗状況</span>
+						<span class="text-xs font-semibold text-indigo-300">{updateState.progress}%</span>
+					</div>
+				</div>
+			{:else if updateState.status === 'downloaded'}
+				<div class="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg">
+					<InfoIcon class="size-5" />
+				</div>
+				<div class="flex-1">
+					<h4 class="text-sm font-semibold text-white">アップデート準備完了</h4>
+					<p class="text-xs text-gray-400 mt-0.5">新しいバージョン v{updateState.newVersion} がダウンロードされました。</p>
+					
+					<div class="flex gap-2 mt-4">
+						<button
+							class="flex-1 px-3 py-1.5 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-none rounded-lg text-white text-xs font-semibold cursor-pointer transition-all hover:scale-102 hover:shadow-lg hover:shadow-purple-500/30"
+							onclick={quitAndInstall}
+						>
+							<div class="flex items-center justify-center gap-1.5">
+								<RefreshCwIcon class="size-3.5" />
+								再起動して更新
+							</div>
+						</button>
+						<button
+							class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border-none rounded-lg text-gray-300 text-xs font-semibold cursor-pointer transition-all"
+							onclick={() => { updateState.status = 'idle'; }}
+						>
+							閉じる
+						</button>
+					</div>
+				</div>
+			{:else if updateState.status === 'error'}
+				<div class="p-2 bg-rose-500/20 text-rose-300 rounded-lg">
+					<AlertCircleIcon class="size-5" />
+				</div>
+				<div class="flex-1">
+					<h4 class="text-sm font-semibold text-white">アップデートエラー</h4>
+					<p class="text-xs text-rose-300 mt-0.5 line-clamp-3">{updateState.errorMessage}</p>
+				</div>
+			{/if}
+		</div>
+	</div>
+{/if}
 
 <!-- Scroll to Top Button -->
 {#if showScrollTop}
