@@ -159,7 +159,7 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
   // Initial auto-check on startup if enabled and packaged
   if (options.autoCheck && app.isPackaged) {
     // Wait for the app to be fully ready and window to load
-    app.whenReady().then(() => {
+    void app.whenReady().then(() => {
       setTimeout(() => {
         console.log("[UpdateService] Initial update check triggered");
         autoUpdater.checkForUpdates().catch((err) => {

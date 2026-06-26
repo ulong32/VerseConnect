@@ -62,7 +62,7 @@ function createMainWindow() {
   const mainWindow = createWindow(dev);
 
   if (dev) loadVite(port);
-  else serveURL(mainWindow);
+  else void serveURL(mainWindow);
 }
 
 app.once("ready", async () => {

@@ -24,7 +24,7 @@ export function initUpdateListeners(): () => void {
   if (!window.electronAPI) return () => {};
 
   // Get current app version
-  window.electronAPI.getAppVersion().then((version) => {
+  void window.electronAPI.getAppVersion().then((version) => {
     updateState.currentVersion = version;
   });
 
