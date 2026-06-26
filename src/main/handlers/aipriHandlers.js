@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.js";
+const log = logger.withSource("AipriHandlers");
 import { randomUUID } from "crypto";
 import { ipcMain } from "electron";
 import fs from "fs";
@@ -179,11 +180,7 @@ export function setupAipriHandlers() {
       sessionCookie: loginResult.cookies || null,
       profileImagePath,
     };
-    logger.log(
-      "[Aipri Debug] add-account save:",
-      name,
-      summarizeCookieString(newAccount.sessionCookie),
-    );
+    log.log("add-account save:", name, summarizeCookieString(newAccount.sessionCookie));
 
     // Add to accounts and set as active
     const updatedAccounts = [...accounts, newAccount];
@@ -208,7 +205,7 @@ export function setupAipriHandlers() {
       try {
         fs.unlinkSync(accountToRemove.profileImagePath);
       } catch (err) {
-        logger.error("Error deleting profile image:", err);
+        log.error("Error deleting profile image:", err);
       }
     }
 
@@ -265,7 +262,7 @@ export function setupAipriHandlers() {
       try {
         fs.unlinkSync(oldAccount.profileImagePath);
       } catch (err) {
-        logger.error("Error deleting old profile image:", err);
+        log.error("Error deleting old profile image:", err);
       }
     }
 
@@ -289,8 +286,8 @@ export function setupAipriHandlers() {
       sessionCookie: loginResult.cookies || null,
       profileImagePath,
     };
-    logger.log(
-      "[Aipri Debug] update-account save:",
+    log.log(
+      "update-account save:",
       credentials.name,
       summarizeCookieString(updatedAccount.sessionCookie),
     );
@@ -371,8 +368,8 @@ export function setupAipriHandlers() {
         ? { ...acc, sessionCookie: loginResult.cookies || null, profileImagePath }
         : acc,
     );
-    logger.log(
-      "[Aipri Debug] switch/relogin save:",
+    log.log(
+      "switch/relogin save:",
       account.name,
       summarizeCookieString(loginResult.cookies || null),
     );
@@ -422,7 +419,7 @@ export function setupAipriHandlers() {
         try {
           fs.unlinkSync(account.profileImagePath);
         } catch (err) {
-          logger.error("Error deleting profile image:", err);
+          log.error("Error deleting profile image:", err);
         }
       }
     }

@@ -1,5 +1,7 @@
 import { logger } from "./utils/logger.js";
 import { app, ipcMain, net, protocol } from "electron";
+
+const log = logger.withSource("Main");
 import serve from "electron-serve";
 import path from "path";
 import { pathToFileURL } from "url";
@@ -52,7 +54,7 @@ function loadVite(port) {
   const mainWindow = getMainWindow();
   if (!mainWindow) return;
   mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
-    logger.log("Error loading URL, retrying", e);
+    log.warn("Error loading URL, retrying", e);
     setTimeout(() => {
       loadVite(port);
     }, 200);
@@ -60,6 +62,7 @@ function loadVite(port) {
 }
 
 function createMainWindow() {
+  log.log("Creating main window (dev =", dev, ")");
   const mainWindow = createWindow(dev);
 
   if (dev) loadVite(port);
@@ -67,6 +70,8 @@ function createMainWindow() {
 }
 
 app.once("ready", async () => {
+  log.log("App ready. Setting up handlers and protocols...");
+
   // カスタムプロトコルハンドラーを登録
   protocol.handle("local-image", (request) => {
     // Strip query parameters and decode file path
@@ -76,15 +81,18 @@ app.once("ready", async () => {
     try {
       filePath = decodeURIComponent(urlWithoutQuery);
     } catch {
+      log.error("Failed to decode local-image URI:", urlWithoutQuery);
       return new Response("Bad Request", { status: 400 });
     }
 
     // Security: only allow image file extensions to prevent arbitrary file reads
     const ext = path.extname(filePath).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+      log.warn("Forbidden local-image file extension:", ext, "Path:", filePath);
       return new Response("Forbidden", { status: 403 });
     }
 
+    log.debug("Serving local-image:", filePath);
     return net.fetch(pathToFileURL(filePath).toString());
   });
 
@@ -95,6 +103,7 @@ app.once("ready", async () => {
     const itemImageFolderPath = store.get("itemImageFolderPath");
 
     if (!itemImageFolderPath) {
+      log.warn("Item image folder not configured for item-image protocol");
       // Return 404 if no folder configured
       return new Response("Item image folder not configured", { status: 404 });
     }
@@ -106,6 +115,7 @@ app.once("ready", async () => {
     try {
       relativePath = decodeURIComponent(urlWithoutQuery);
     } catch {
+      log.error("Failed to decode item-image URI:", urlWithoutQuery);
       return new Response("Bad Request", { status: 400 });
     }
 
@@ -117,20 +127,24 @@ app.once("ready", async () => {
     // Use path.relative() to detect traversal attempts — safe on all platforms
     const rel = path.relative(resolvedBase, filePath);
     if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      log.warn("Forbidden item-image directory traversal attempt relative path:", rel);
       return new Response("Forbidden", { status: 403 });
     }
 
     // Security: only allow image file extensions
     const ext = path.extname(filePath).toLowerCase();
     if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+      log.warn("Forbidden item-image file extension:", ext, "Path:", filePath);
       return new Response("Forbidden", { status: 403 });
     }
 
+    log.debug("Serving item-image:", filePath);
     return net.fetch(pathToFileURL(filePath).toString());
   });
 
   await initStore();
 
+  log.log("Initializing handlers and services...");
   // Setup IPC Handlers
   setupFileHandlers();
   setupAipriHandlers();
@@ -146,11 +160,13 @@ app.once("ready", async () => {
 
 app.on("activate", () => {
   if (!getMainWindow()) {
+    log.log("App activated. Re-creating main window...");
     createMainWindow();
   }
 });
 
 app.on("window-all-closed", () => {
+  log.log("All windows closed. Quitting app...");
   if (process.platform !== "darwin") app.quit();
 });
 

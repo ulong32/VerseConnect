@@ -1,4 +1,6 @@
 import { logger } from "$lib/utils/logger";
+
+const log = logger.withSource("SessionStore");
 // Session state using Svelte 5 runes
 export const sessionState = $state({
   isLoggedIn: false,
@@ -36,7 +38,7 @@ export async function loadAccounts(): Promise<void> {
       sessionState.profileImageUrl = null;
     }
   } catch (error) {
-    logger.error("Load accounts error:", error);
+    log.error("Load accounts error:", error);
   }
 }
 
@@ -78,7 +80,7 @@ export async function checkSession(force = false): Promise<boolean> {
       return false;
     }
   } catch (error) {
-    logger.error("Session check error:", error);
+    log.error("Session check error:", error);
     sessionState.error = String(error);
     sessionState.isLoggedIn = false;
     return false;
@@ -147,7 +149,7 @@ export async function login(credentials: AipriLoginCredentials): Promise<AipriLo
     sessionState.error = resolvedError;
     return { success: false, error: resolvedError };
   } catch (error) {
-    logger.error("Login error:", error);
+    log.error("Login error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -177,7 +179,7 @@ export async function addAccount(
 
     return result;
   } catch (error) {
-    logger.error("Add account error:", error);
+    log.error("Add account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -199,7 +201,7 @@ export async function removeAccount(accountId: string): Promise<void> {
       sessionState.profileImageUrl = null;
     }
   } catch (error) {
-    logger.error("Remove account error:", error);
+    log.error("Remove account error:", error);
   }
 }
 
@@ -226,7 +228,7 @@ export async function updateAccount(
 
     return result;
   } catch (error) {
-    logger.error("Update account error:", error);
+    log.error("Update account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -268,7 +270,7 @@ export async function switchAccount(accountId: string): Promise<AipriSwitchAccou
 
     return result;
   } catch (error) {
-    logger.error("Switch account error:", error);
+    log.error("Switch account error:", error);
     const errorMessage = `通信エラー: ${String(error)}`;
     sessionState.error = errorMessage;
     return { success: false, error: errorMessage };
@@ -289,7 +291,7 @@ export async function logout(): Promise<void> {
   try {
     await window.electronAPI.aipriClearSession();
   } catch (error) {
-    logger.error("Logout error:", error);
+    log.error("Logout error:", error);
   }
 
   sessionState.isLoggedIn = false;

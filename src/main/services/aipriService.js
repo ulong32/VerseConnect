@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.js";
+const log = logger.withSource("AipriService");
 import { randomUUID } from "crypto";
 import { net, session } from "electron";
 import fs from "fs";
@@ -21,19 +22,6 @@ const AIPRI_CDN_BASE_URL = "https://cdnaipriimg01.blob.core.windows.net";
  *   profileImagePath: string | null
  * }} AipriAccount
  */
-
-/** @param {string | null | undefined} cookieString */
-const summarizeCookieString = (cookieString) => {
-  if (!cookieString) return "(empty)";
-  const names = cookieString
-    .split(";")
-    .map((/** @type {string} */ part) => part.trim())
-    .filter(Boolean)
-    .map((/** @type {string} */ pair) => pair.split("=")[0])
-    .filter(Boolean);
-  const uniqueNames = [...new Set(names)];
-  return `${uniqueNames.join(",")} (parts=${names.length})`;
-};
 
 /** @param {string | null | undefined} cookieString */
 const hasRequiredSessionCookies = (cookieString) =>
@@ -98,12 +86,6 @@ const stringifyCookies = (cookies) => cookies.map((c) => `${c.name}=${c.value}`)
 export const parseCookies = (setCookieHeaders) => {
   if (!setCookieHeaders || setCookieHeaders.length === 0) return "";
   const parsed = setCookieHeaders.map((cookie) => cookie.split(";")[0]).join("; ");
-  logger.log(
-    "[Aipri Debug] parseCookies headers:",
-    setCookieHeaders.length,
-    "=>",
-    summarizeCookieString(parsed),
-  );
   return parsed;
 };
 
@@ -170,7 +152,6 @@ export const updateActiveSessionCookie = (sessionCookie) => {
  */
 export const setAipriSessionCookies = async (cookieString) => {
   try {
-    logger.log("[Aipri Debug] setAipriSessionCookies input:", summarizeCookieString(cookieString));
     // First clear existing cookies
     const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
     for (const cookie of existingCookies) {
@@ -210,7 +191,7 @@ export const setAipriSessionCookies = async (cookieString) => {
       }
     }
   } catch (err) {
-    logger.error("Error setting aipri session cookies:", err);
+    log.error("Error setting aipri session cookies:", err);
   }
 };
 
@@ -222,7 +203,7 @@ export const setAipriSessionCookies = async (cookieString) => {
  * @returns {Promise<string | null>}
  */
 export const downloadAndSaveProfileImage = async (imageUrl, accountName, sessionCookie) => {
-  logger.log("[Profile Image] Downloading for account:", accountName, "URL:", imageUrl);
+  log.log("Downloading profile image for account:", accountName, "URL:", imageUrl);
   try {
     // Set session cookies only when explicitly provided.
     if (sessionCookie) {
@@ -234,7 +215,7 @@ export const downloadAndSaveProfileImage = async (imageUrl, accountName, session
     });
 
     if (!response.ok) {
-      logger.error("Failed to download profile image:", response.status);
+      log.error("Failed to download profile image:", response.status);
       return null;
     }
 
@@ -244,11 +225,11 @@ export const downloadAndSaveProfileImage = async (imageUrl, accountName, session
     const filename = `${safeAccountName}.jpg`;
     const profileImagesDir = getProfileImagesDir();
     const filePath = path.join(profileImagesDir, filename);
-    logger.log("[Profile Image] Saving to:", filePath, "Buffer size:", buffer.length);
+    log.log("Saving profile image to:", filePath, "Buffer size:", buffer.length);
     fs.writeFileSync(filePath, buffer);
     return filePath;
   } catch (error) {
-    logger.error("Error downloading profile image:", error);
+    log.error("Error downloading profile image:", error);
     return null;
   }
 };
@@ -262,7 +243,7 @@ export const performLogin = async (credentials) => {
   const { cardId, name, birthdayM, birthdayD } = credentials;
 
   try {
-    logger.log("[Aipri Debug] performLogin start:", { name, cardId });
+    log.log("performLogin start:", { name, cardId });
     // Clear existing aipri.jp cookies to prevent session contamination
     const existingCookies = await session.defaultSession.cookies.get({ url: AIPRI_BASE_URL });
     for (const cookie of existingCookies) {
@@ -302,10 +283,6 @@ export const performLogin = async (credentials) => {
     // Get cookies from response
     const setCookies = response.headers.getSetCookie();
     let cookies = parseCookies(setCookies);
-    logger.log(
-      "[Aipri Debug] performLogin response set-cookie summary:",
-      summarizeCookieString(cookies),
-    );
 
     // When redirect:follow is used (and with Front Door), response headers can include only LB cookies.
     // If required app session cookies are missing, recover from the Electron cookie jar.
@@ -347,13 +324,8 @@ export const performLogin = async (credentials) => {
         }
 
         cookies = stringifyCookies(Array.from(cookieMap.values()));
-        logger.log(
-          "[Aipri Debug] performLogin fallback session cookies:",
-          Array.from(cookieMap.keys()).join(","),
-          `count=${cookieMap.size}`,
-        );
       } catch (err) {
-        logger.error("Error getting cookies from session:", err);
+        log.error("Error getting cookies from session:", err);
       }
     }
 
@@ -372,37 +344,23 @@ export const performLogin = async (credentials) => {
       html.includes('id="loginForm"') ||
       html.includes("ログインフォーム")
     ) {
-      logger.log("[Aipri Debug] performLogin rejected as login page:", finalUrl);
+      log.log("performLogin rejected as login page:", finalUrl);
       return { success: false, error: "ログインに失敗しました。入力情報を確認してください。" };
     }
 
     if (!hasRequiredSessionCookies(cookies)) {
-      logger.log(
-        "[Aipri Debug] performLogin missing required session cookies:",
-        summarizeCookieString(cookies),
-      );
       return {
         success: false,
         error: "ログインセッションの取得に失敗しました。しばらくしてから再試行してください。",
       };
     }
 
-    logger.log(
-      "[Aipri Debug] performLogin accepted:",
-      name,
-      "finalUrl=",
-      finalUrl,
-      "cookieSummary=",
-      summarizeCookieString(cookies),
-      "hasMYPAPSSID=",
-      Boolean(cookies && cookies.includes("MYPAPSSID=")),
-    );
+    log.log("performLogin accepted:", name);
 
     // Fetch mypage explicitly with the obtained cookies to get correct profile image
     let profileImageUrl = null;
     if (cookies) {
       try {
-        logger.log("[Profile Image] Fetching mypage with explicit cookies for:", name);
         // Set session cookies for this account
         await setAipriSessionCookies(cookies);
 
@@ -413,26 +371,17 @@ export const performLogin = async (credentials) => {
           redirect: "follow",
         });
 
-        logger.log(
-          "[Profile Image] Mypage response:",
-          mypageResponse.status,
-          "Final URL:",
-          mypageResponse.url,
-        );
-
         if (mypageResponse.ok) {
           const mypageHtml = await mypageResponse.text();
           // Check if we got redirected to login page
           if (mypageResponse.url.includes("/login")) {
-            logger.log("[Profile Image] Redirected to login, falling back to login HTML");
             profileImageUrl = extractProfileImage(html);
           } else {
             profileImageUrl = extractProfileImage(mypageHtml);
           }
-          logger.log("[Profile Image] Extracted URL:", profileImageUrl);
         }
       } catch (err) {
-        logger.error("Error fetching mypage for profile image:", err);
+        log.error("Error fetching mypage for profile image:", err);
         // Fallback to login response HTML
         profileImageUrl = extractProfileImage(html);
       }
@@ -446,7 +395,7 @@ export const performLogin = async (credentials) => {
       profileImageUrl: profileImageUrl || undefined,
     };
   } catch (error) {
-    logger.error("Aipri login error:", error);
+    log.error("Aipri login error:", error);
     return { success: false, error: `通信エラー: ${String(error)}` };
   }
 };
@@ -523,7 +472,7 @@ export const fetchPhotos = async (targetYm, isRetry = false) => {
       photos: result.data?.photo_list || [],
     };
   } catch (error) {
-    logger.error("Fetch photos error:", error);
+    log.error("Fetch photos error:", error);
     return { success: false, error: `通信エラー: ${String(error)}` };
   }
 };
@@ -627,7 +576,7 @@ export const downloadPhoto = async (url, filename, folderPath) => {
 
     return { success: true, skipped: false };
   } catch (error) {
-    logger.error("Download photo error:", error);
+    log.error("Download photo error:", error);
     return { success: false, error: `ダウンロードエラー: ${String(error)}` };
   }
 };
@@ -663,7 +612,7 @@ export const verifySession = async (sessionCookie) => {
 
     return { valid: false, reason: `予期しないレスポンス (${response.status})` };
   } catch (error) {
-    logger.error("Session verify error:", error);
+    log.error("Session verify error:", error);
     return { valid: false, reason: `通信エラー: ${String(error)}` };
   }
 };

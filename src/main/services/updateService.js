@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.js";
+const log = logger.withSource("UpdateService");
 import { app, ipcMain } from "electron";
 import fs from "fs";
 import path from "path";
@@ -94,7 +95,7 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
     const debugMode = store.get("debugMode") === true;
 
     if (debugMode && !app.isPackaged) {
-      logger.log("[UpdateService] Debug mode: Simulating update flow for UI debugging");
+      log.log("Debug mode: Simulating update flow for UI debugging");
       sendToRenderer("update-checking");
 
       setTimeout(() => {
@@ -120,7 +121,7 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
 
     if (!app.isPackaged) {
       // In development mode, mock update-not-available or just skip
-      logger.log("[UpdateService] Update check skipped in dev mode");
+      log.log("Update check skipped in dev mode");
       setTimeout(() => {
         sendToRenderer("update-not-available");
       }, 1000);
@@ -129,7 +130,7 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
     try {
       await autoUpdater.checkForUpdates();
     } catch (error) {
-      logger.error("[UpdateService] Error checking for updates:", error);
+      log.error("Error checking for updates:", error);
       const message = error instanceof Error ? error.message : String(error);
       sendToRenderer("update-error", message);
     }
@@ -137,13 +138,13 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
 
   ipcMain.handle("update-download", async () => {
     if (!app.isPackaged) {
-      logger.log("[UpdateService] Update download skipped in dev mode");
+      log.log("Update download skipped in dev mode");
       return;
     }
     try {
       await autoUpdater.downloadUpdate();
     } catch (error) {
-      logger.error("[UpdateService] Error downloading update:", error);
+      log.error("Error downloading update:", error);
       const message = error instanceof Error ? error.message : String(error);
       sendToRenderer("update-error", message);
     }
@@ -151,7 +152,7 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
 
   ipcMain.handle("update-install", () => {
     if (!app.isPackaged) {
-      logger.log("[UpdateService] App quit and install skipped in dev mode");
+      log.log("App quit and install skipped in dev mode");
       return;
     }
     autoUpdater.quitAndInstall();
@@ -162,9 +163,9 @@ export function setupUpdateService(getMainWindow, options = { autoCheck: true })
     // Wait for the app to be fully ready and window to load
     void app.whenReady().then(() => {
       setTimeout(() => {
-        logger.log("[UpdateService] Initial update check triggered");
+        log.log("Initial update check triggered");
         autoUpdater.checkForUpdates().catch((err) => {
-          logger.error("[UpdateService] Failed initial update check:", err);
+          log.error("Failed initial update check:", err);
         });
       }, 5000); // 5 seconds delay to not block startup
     });

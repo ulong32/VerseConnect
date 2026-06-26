@@ -4,6 +4,8 @@ import path from "path";
 import fs from "fs/promises";
 import { getStore } from "../store.js";
 
+const log = logger.withSource("AppHandlers");
+
 /** Allowed image file extensions for clipboard copy */
 const ALLOWED_CLIPBOARD_EXTENSIONS = new Set([
   ".jpg",
@@ -21,19 +23,23 @@ const ALLOWED_CLIPBOARD_EXTENSIONS = new Set([
 export function setupAppHandlers(getMainWindow) {
   // フォルダ選択ダイアログ
   ipcMain.handle("select-folder", async () => {
+    log.log("select-folder called");
     const mainWindow = getMainWindow();
     if (!mainWindow) return null;
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ["openDirectory"],
     });
     if (result.canceled || result.filePaths.length === 0) {
+      log.log("select-folder cancelled");
       return null;
     }
+    log.log("select-folder selected:", result.filePaths[0]);
     return result.filePaths[0];
   });
 
   // ファイル選択ダイアログ
   ipcMain.handle("select-file", async (event, options) => {
+    log.log("select-file called with options:", options);
     const mainWindow = getMainWindow();
     if (!mainWindow) return null;
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -42,13 +48,16 @@ export function setupAppHandlers(getMainWindow) {
       filters: options?.filters || [{ name: "Images", extensions: ["webp", "png", "jpg", "jpeg"] }],
     });
     if (result.canceled || result.filePaths.length === 0) {
+      log.log("select-file cancelled");
       return null;
     }
+    log.log("select-file selected:", result.filePaths[0]);
     return result.filePaths[0];
   });
 
   // 設定を取得
   ipcMain.handle("get-settings", async () => {
+    log.log("get-settings called");
     const store = getStore();
     return {
       folderPath: store.get("folderPath") || "",
@@ -62,6 +71,7 @@ export function setupAppHandlers(getMainWindow) {
 
   // 設定を保存
   ipcMain.handle("set-settings", async (event, settings) => {
+    log.log("set-settings called with keys:", Object.keys(settings));
     const store = getStore();
     if (settings.folderPath !== undefined) {
       store.set("folderPath", settings.folderPath);
@@ -88,6 +98,7 @@ export function setupAppHandlers(getMainWindow) {
   ipcMain.handle("show-confirm-dialog", async (event, options) => {
     const mainWindow = getMainWindow();
     const { title, message, okLabel, cancelLabel } = options;
+    log.log("show-confirm-dialog called:", { title, message });
     /** @type {import('electron').MessageBoxSyncOptions} */
     const dialogOptions = {
       type: "warning",
@@ -101,16 +112,19 @@ export function setupAppHandlers(getMainWindow) {
       ? dialog.showMessageBoxSync(mainWindow, dialogOptions)
       : dialog.showMessageBoxSync(dialogOptions);
     // Returns 0 for cancel (first button), 1 for ok (second button)
+    log.log("show-confirm-dialog result:", result === 1);
     return result === 1;
   });
 
   // Window controls
   ipcMain.on("window-minimize", () => {
+    log.log("window-minimize event received");
     const mainWindow = getMainWindow();
     if (mainWindow) mainWindow.minimize();
   });
 
   ipcMain.on("window-maximize", () => {
+    log.log("window-maximize event received");
     const mainWindow = getMainWindow();
     if (mainWindow) {
       if (mainWindow.isMaximized()) {
@@ -122,16 +136,19 @@ export function setupAppHandlers(getMainWindow) {
   });
 
   ipcMain.on("window-close", () => {
+    log.log("window-close event received");
     const mainWindow = getMainWindow();
     if (mainWindow) mainWindow.close();
   });
 
   // Copy image to clipboard
   ipcMain.handle("copy-image-to-clipboard", async (event, filePath) => {
+    log.log("copy-image-to-clipboard called for:", filePath);
     try {
       // Security: only allow image file extensions to prevent arbitrary file reads
       const ext = path.extname(filePath).toLowerCase();
       if (!ALLOWED_CLIPBOARD_EXTENSIONS.has(ext)) {
+        log.warn("copy-image-to-clipboard forbidden file extension:", ext);
         return { success: false, error: "許可されていないファイル形式です" };
       }
 
@@ -139,12 +156,14 @@ export function setupAppHandlers(getMainWindow) {
       const buffer = await fs.readFile(filePath);
       const image = nativeImage.createFromBuffer(buffer);
       if (image.isEmpty()) {
+        log.error("copy-image-to-clipboard image is empty/corrupt:", filePath);
         return { success: false, error: "画像の読み込みに失敗しました" };
       }
       clipboard.writeImage(image);
+      log.log("copy-image-to-clipboard success for:", filePath);
       return { success: true };
     } catch (error) {
-      logger.error("Failed to copy image to clipboard:", error);
+      log.error("Failed to copy image to clipboard:", error);
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });
