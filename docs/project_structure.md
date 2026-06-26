@@ -6,24 +6,42 @@ This document provides a detailed overview of the VerseConnect project structure
 
 ```
 VerseConnect/
-├── .gemini/                # Metadata and AI artifacts
+├── .agents/                # Project customizations and rules
 ├── docs/                   # Documentation (this folder)
 ├── src/
 │   ├── main/               # Electron Main Process Code
 │   │   ├── handlers/       # IPC Handlers (Renderer -> Main communication)
-│   │   ├── services/       # Business Logic and External Services (File system, API)
+│   │   │   ├── aipriHandlers.js
+│   │   │   ├── appHandlers.js
+│   │   │   └── fileHandlers.js
+│   │   ├── services/       # Business Logic and Services
+│   │   │   ├── aipriService.js
+│   │   │   ├── fileService.js
+│   │   │   └── updateService.js # Auto-updater service
 │   │   ├── index.js        # Entry point for Electron
 │   │   ├── store.js        # Electron Store configuration
 │   │   └── windowManager.js # Browser Window management
 │   ├── lib/                # SvelteKit Library Code (Renderer)
 │   │   ├── components/     # Reusable Svelte components
+│   │   │   ├── AccountSelector.svelte
+│   │   │   ├── BulkEditPanel.svelte
+│   │   │   ├── ImageModal.svelte
+│   │   │   ├── ImageTile.svelte
+│   │   │   ├── MetadataEditor.svelte
+│   │   │   └── SearchPanel.svelte
 │   │   └── stores/         # State management using Svelte 5 Runes
-│   └── routes/             # SvelteKit Routes (Pages)
-│       ├── import/         # Import page (+page.svelte)
-│       ├── +layout.svelte  # Root layout
-│       └── +page.svelte    # Main image viewer page
+│   │       ├── session.svelte.ts
+│   │       ├── settings.svelte.ts
+│   │       └── update.svelte.ts # Auto-updater UI state
+│   ├── routes/             # SvelteKit Routes (Pages)
+│   │   ├── import/         # Import page (+page.svelte)
+│   │   ├── settings/       # Settings page (+page.svelte)
+│   │   ├── +layout.svelte  # Root layout
+│   │   ├── +layout.ts      # Page loading configuration
+│   │   └── +page.svelte    # Main image viewer page
+│   └── preload.cjs         # Electron Context Bridge preload script
 ├── static/                 # Static assets
-├── GEMINI.md               # High-level project overview
+├── AGENTS.md               # Workspace rules and AI persona configuration
 └── package.json            # Dependencies and scripts
 ```
 

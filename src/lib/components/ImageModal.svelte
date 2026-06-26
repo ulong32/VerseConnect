@@ -111,7 +111,7 @@
 
 	// Reset zoom/pan when image changes
 	$effect(() => {
-		displayUrl; // track displayUrl changes
+		void displayUrl; // track displayUrl changes
 		imageScale = 1;
 		translateX = 0;
 		translateY = 0;
@@ -155,7 +155,7 @@
 		e.preventDefault();
 		const delta = e.deltaY > 0 ? -0.2 : 0.2;
 		const newScale = Math.min(Math.max(0.5, imageScale + delta), 5);
-		
+
 		if (newScale === 1) {
 			translateX = 0;
 			translateY = 0;
