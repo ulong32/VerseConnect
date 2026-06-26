@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { logger } from "$lib/utils/logger";
+
   import BulkEditPanel from "$lib/components/BulkEditPanel.svelte";
   import ImageModal from "$lib/components/ImageModal.svelte";
   import ImageTile from "$lib/components/ImageTile.svelte";
@@ -260,7 +262,7 @@
     try {
       images = await window.electronAPI.getImages(settingsState.folderPath);
     } catch (error) {
-      console.error("Failed to load images:", error);
+      logger.error("Failed to load images:", error);
       images = [];
     } finally {
       isLoading = false;
@@ -392,7 +394,7 @@
       if (result.success) {
         currentMetadata.friend_card = file.name;
       } else {
-        console.error("Error saving friend card:", result.error);
+        logger.error("Error saving friend card:", result.error);
       }
     };
     reader.readAsDataURL(file);

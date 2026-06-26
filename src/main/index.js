@@ -1,3 +1,4 @@
+import { logger } from "./utils/logger.js";
 import { app, ipcMain, net, protocol } from "electron";
 import serve from "electron-serve";
 import path from "path";
@@ -51,7 +52,7 @@ function loadVite(port) {
   const mainWindow = getMainWindow();
   if (!mainWindow) return;
   mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
-    console.log("Error loading URL, retrying", e);
+    logger.log("Error loading URL, retrying", e);
     setTimeout(() => {
       loadVite(port);
     }, 200);

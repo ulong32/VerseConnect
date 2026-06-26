@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { logger } from "$lib/utils/logger";
+
   import { goto } from "$app/navigation";
   import faviconPng from "$lib/assets/favicon.png";
   import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
@@ -55,7 +57,7 @@
 
   // Scroll listener on container element
   $effect(() => {
-    console.log(scrollContainer);
+    logger.log(scrollContainer);
     if (!scrollContainer) return;
     const handleScroll = () => {
       showScrollTop = scrollContainer!.scrollTop > 300;

@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 import { clipboard, dialog, ipcMain, nativeImage } from "electron";
 import path from "path";
 import fs from "fs/promises";
@@ -143,7 +144,7 @@ export function setupAppHandlers(getMainWindow) {
       clipboard.writeImage(image);
       return { success: true };
     } catch (error) {
-      console.error("Failed to copy image to clipboard:", error);
+      logger.error("Failed to copy image to clipboard:", error);
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });

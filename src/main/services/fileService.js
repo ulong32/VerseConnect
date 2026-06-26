@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 import fs from "fs";
 import path from "path";
 
@@ -52,7 +53,7 @@ export const loadFolderMetadata = (folderPath) => {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error("Error reading metadata file:", error);
+    logger.error("Error reading metadata file:", error);
   }
   return {};
 };
@@ -69,7 +70,7 @@ export const saveFolderMetadata = (folderPath, metadata) => {
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2), "utf-8");
     return true;
   } catch (error) {
-    console.error("Error writing metadata file:", error);
+    logger.error("Error writing metadata file:", error);
     return false;
   }
 };
@@ -121,7 +122,7 @@ export const scanFolder = (folderPath) => {
         }
       }
     } catch (error) {
-      console.error("Error scanning folder:", currentPath, error);
+      logger.error("Error scanning folder:", currentPath, error);
     }
 
     return images;
@@ -130,7 +131,7 @@ export const scanFolder = (folderPath) => {
   try {
     return scan(folderPath);
   } catch (error) {
-    console.error("Error reading folder:", error);
+    logger.error("Error reading folder:", error);
     return [];
   }
 };
@@ -167,7 +168,7 @@ export const saveFriendCard = (folderPath, filename, base64Data) => {
 
     return { success: true, filename: safeFilename };
   } catch (error) {
-    console.error("Error saving friend card:", error);
+    logger.error("Error saving friend card:", error);
     return { success: false, error: String(error) };
   }
 };
@@ -200,7 +201,7 @@ export const deleteFriendCard = (folderPath, filename) => {
     fs.unlinkSync(targetPath);
     return { success: true, filename: safeFilename };
   } catch (error) {
-    console.error("Error deleting friend card:", error);
+    logger.error("Error deleting friend card:", error);
     return { success: false, error: String(error) };
   }
 };

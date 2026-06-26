@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { logger } from "$lib/utils/logger";
+
   import { beforeNavigate, goto } from "$app/navigation";
   import AccountSelector from "$lib/components/AccountSelector.svelte";
   import {
@@ -177,7 +179,7 @@
           }
         } else {
           errorCount++;
-          console.error("Download failed:", photo.photo_file_url, result.error);
+          logger.error("Download failed:", photo.photo_file_url, result.error);
         }
 
         importProgress.current++;
