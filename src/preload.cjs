@@ -32,6 +32,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteFriendCard: (folderPath, filename) =>
     ipcRenderer.invoke("delete-friend-card", folderPath, filename),
 
+  // Background removal
+  getBackgroundMask: (imageData) => ipcRenderer.invoke("get-background-mask", imageData),
+  saveFileDialog: (options) => ipcRenderer.invoke("save-file-dialog", options),
+  saveTransparentImage: (filePath, base64Data) =>
+    ipcRenderer.invoke("save-transparent-image", filePath, base64Data),
+
   // Aipri API
   aipriCheckSession: () => ipcRenderer.invoke("aipri-check-session"),
   aipriClearSession: () => ipcRenderer.invoke("aipri-clear-session"),

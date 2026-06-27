@@ -10,8 +10,12 @@
 	import PenIcon from '@lucide/svelte/icons/pen';
 	import TagIcon from '@lucide/svelte/icons/tag';
 	import XIcon from '@lucide/svelte/icons/x';
+	import Wand2Icon from '@lucide/svelte/icons/wand-2';
+	import SaveIcon from '@lucide/svelte/icons/save';
+	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import { slide, fade } from 'svelte/transition';
 	import MetadataEditor from './MetadataEditor.svelte';
+	import { settingsState } from '../stores/settings.svelte';
 
 	interface Props {
 		selectedImage: ImageInfo;
@@ -92,6 +96,156 @@
 		showFriendCard && friendCardPath ? friendCardPath : selectedImage.path
 	);
 
+	// Background Removal State
+	let canvas: HTMLCanvasElement;
+	let whiteRatio = $state<number | null>(null);
+	let showTransparentBtn = $derived(whiteRatio !== null && whiteRatio >= 0.10);
+	let transparentDataUrl = $state<string | null>(null); // This is now a Blob URL
+	let showingTransparent = $state(false);
+	let bgRemovalStatus = $state<'idle' | 'loading-model' | 'processing' | 'done' | 'error'>('idle');
+	let seedPoints = $state<{x: number, y: number}[]>([]);
+
+	$effect(() => {
+		const checkRatio = async () => {
+			if (window.electronAPI && displayUrl && canvas) {
+				whiteRatio = null;
+				transparentDataUrl = null;
+				showingTransparent = false;
+				bgRemovalStatus = 'idle';
+				seedPoints = [];
+				try {
+					const img = new Image();
+					img.crossOrigin = "Anonymous";
+					img.onload = () => {
+						console.log("Image loaded for canvas ratio check");
+						canvas.width = img.width;
+						canvas.height = img.height;
+						const ctx = canvas.getContext('2d');
+						if (!ctx) return;
+						ctx.drawImage(img, 0, 0);
+						try {
+							const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+							const data = imageData.data;
+							let whiteCount = 0;
+							const totalPixels = canvas.width * canvas.height;
+							for (let i = 0; i < data.length; i += 4) {
+								if (data[i] >= 240 && data[i + 1] >= 240 && data[i + 2] >= 240) whiteCount++;
+							}
+							whiteRatio = whiteCount / totalPixels;
+							console.log("White ratio calculated:", whiteRatio);
+						} catch (err) {
+							console.error("Canvas getImageData failed:", err);
+							whiteRatio = 0;
+						}
+					};
+					img.onerror = (e) => {
+						console.error("Failed to load image for canvas", e);
+						whiteRatio = 0;
+					};
+					img.src = displayUrl;
+				} catch (e) {
+					console.error(e);
+					whiteRatio = 0;
+				}
+			}
+		};
+		// Ignore the warning about not awaiting in effect
+		checkRatio();
+	});
+
+	let actualDisplayUrl = $derived(showingTransparent && transparentDataUrl ? transparentDataUrl : displayUrl);
+
+	async function toggleTransparent() {
+		if (bgRemovalStatus === 'loading-model' || bgRemovalStatus === 'processing') return;
+
+		if (transparentDataUrl) {
+			showingTransparent = !showingTransparent;
+			return;
+		}
+
+		await runBackgroundRemoval();
+	}
+
+	async function runBackgroundRemoval() {
+		if (window.electronAPI && displayUrl && canvas) {
+			bgRemovalStatus = 'processing';
+			try {
+				const img = new Image();
+				img.crossOrigin = "Anonymous";
+				img.onload = async () => {
+					console.log("Image loaded for background removal");
+					canvas.width = img.width;
+					canvas.height = img.height;
+					const ctx = canvas.getContext('2d');
+					if (!ctx) return;
+					ctx.drawImage(img, 0, 0);
+					const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+					
+					const maskData = await window.electronAPI.getBackgroundMask({
+						data: imageData.data,
+						width: canvas.width,
+						height: canvas.height,
+						seedPoints: $state.snapshot(seedPoints)
+					});
+
+					if (maskData) {
+						const newImageData = ctx.createImageData(canvas.width, canvas.height);
+						newImageData.data.set(imageData.data);
+						for (let i = 0; i < maskData.length; i++) {
+							newImageData.data[i * 4 + 3] = maskData[i];
+						}
+						ctx.putImageData(newImageData, 0, 0);
+						
+						canvas.toBlob((blob) => {
+							if (blob) {
+								if (transparentDataUrl) URL.revokeObjectURL(transparentDataUrl);
+								transparentDataUrl = URL.createObjectURL(blob);
+								showingTransparent = true;
+								bgRemovalStatus = 'done';
+							} else {
+								bgRemovalStatus = 'error';
+							}
+						}, 'image/png');
+					} else {
+						bgRemovalStatus = 'error';
+					}
+				};
+				img.src = displayUrl;
+			} catch (e) {
+				console.error(e);
+				bgRemovalStatus = 'error';
+			}
+		}
+	}
+
+	async function saveTransparentImage() {
+		if (!transparentDataUrl || !window.electronAPI) return;
+		const options = {
+			defaultPath: selectedImage.name.replace(/\.[^/.]+$/, "") + "_nobg.png",
+			filters: [{ name: "Images", extensions: ["png"] }]
+		};
+		const filePath = await window.electronAPI.saveFileDialog(options);
+		if (filePath) {
+			try {
+				const res = await fetch(transparentDataUrl);
+				const blob = await res.blob();
+				const reader = new FileReader();
+				reader.onloadend = async () => {
+					if (typeof reader.result === 'string') {
+						const base64Data = reader.result.split(',')[1];
+						const result = await window.electronAPI.saveTransparentImage(filePath, base64Data);
+						if (!result.success) {
+							console.error("Failed to save", result.error);
+						}
+					}
+				};
+				reader.readAsDataURL(blob);
+			} catch (err) {
+				console.error("Error saving image:", err);
+			}
+		}
+	}
+
 	// Toggle UI visibility
 	let showUI = $state(true);
 
@@ -108,6 +262,7 @@
 	let dragStartY = $state(0);
 	let lastTranslateX = $state(0);
 	let lastTranslateY = $state(0);
+	let hasDragged = $state(false);
 
 	// Reset zoom/pan when image changes
 	$effect(() => {
@@ -116,6 +271,29 @@
 		translateX = 0;
 		translateY = 0;
 	});
+
+	async function handleImageClick(e: MouseEvent) {
+		if (hasDragged) {
+			hasDragged = false;
+			return; // Ignore click after drag
+		}
+
+		// Only allow adding seed points if floodfill and currently showing transparent image
+		if (showingTransparent && settingsState.bgRemovalAlgorithm === 'floodfill' && !isDragging) {
+			const target = e.currentTarget as HTMLImageElement;
+			// Scale offsetX/Y back to the original image dimensions
+			const scaleX = canvas.width / target.clientWidth;
+			const scaleY = canvas.height / target.clientHeight;
+			
+			const x = e.offsetX * scaleX;
+			const y = e.offsetY * scaleY;
+			
+			seedPoints = [...seedPoints, { x, y }];
+			
+			// Re-run the background removal
+			await runBackgroundRemoval();
+		}
+	}
 
 	// Reset showFriendCard when the current image doesn't have friend_card metadata
 	$effect(() => {
@@ -168,6 +346,7 @@
 		if (imageScale > 1) {
 			e.preventDefault();
 			isDragging = true;
+			hasDragged = false;
 			dragStartX = e.clientX;
 			dragStartY = e.clientY;
 			lastTranslateX = translateX;
@@ -179,6 +358,10 @@
 	function handleMouseMove(e: MouseEvent) {
 		if (isDragging) {
 			e.preventDefault();
+			// Mark as dragged if moved more than 3 pixels
+			if (Math.abs(e.clientX - dragStartX) > 3 || Math.abs(e.clientY - dragStartY) > 3) {
+				hasDragged = true;
+			}
 			translateX = lastTranslateX + (e.clientX - dragStartX);
 			translateY = lastTranslateY + (e.clientY - dragStartY);
 		}
@@ -256,17 +439,20 @@
 		role="presentation"
 		aria-label="画像コンテンツ"
 	>
+		<canvas bind:this={canvas} class="hidden"></canvas>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<img
 			class="max-w-11/12 max-h-screen object-contain rounded-lg select-none"
-			class:cursor-grab={imageScale > 1 && !isDragging}
+			class:cursor-grab={imageScale > 1 && !isDragging && !(showingTransparent && settingsState.bgRemovalAlgorithm === 'floodfill')}
 			class:cursor-grabbing={isDragging}
-			src={displayUrl}
+			class:cursor-crosshair={showingTransparent && settingsState.bgRemovalAlgorithm === 'floodfill' && !isDragging}
+			src={actualDisplayUrl}
 			alt={selectedImage.name}
 			style="transform: {imageTransform}; transform-origin: center center;"
 			ondblclick={handleDoubleClick}
 			onwheel={handleWheel}
 			onmousedown={handleMouseDown}
+			onclick={handleImageClick}
 			draggable="false"
 		/>
 
@@ -329,6 +515,29 @@
 								title="フレンドカードを表示"
 							>
 								<ArrowLeftRightIcon class="size-4" />
+							</button>
+						{/if}
+						{#if showTransparentBtn}
+							<button
+								class="p-1 hover:bg-white/20 rounded transition-colors focus:outline-none {showingTransparent ? 'bg-indigo-600/50' : ''} disabled:opacity-50"
+								onclick={toggleTransparent}
+								disabled={bgRemovalStatus === 'loading-model' || bgRemovalStatus === 'processing'}
+								title="背景透過"
+							>
+								{#if bgRemovalStatus === 'loading-model' || bgRemovalStatus === 'processing'}
+									<Loader2Icon class="size-4 animate-spin" />
+								{:else}
+									<Wand2Icon class="size-4" />
+								{/if}
+							</button>
+						{/if}
+						{#if transparentDataUrl && showingTransparent}
+							<button
+								class="p-1 hover:bg-white/20 rounded transition-colors focus:outline-none"
+								onclick={saveTransparentImage}
+								title="透過画像を保存"
+							>
+								<SaveIcon class="size-4" />
 							</button>
 						{/if}
 					</div>

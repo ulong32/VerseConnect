@@ -35,6 +35,8 @@ protocol.registerSchemesAsPrivileged([
       secure: true,
       supportFetchAPI: true,
       stream: true,
+      corsEnabled: true,
+      bypassCSP: true,
     },
   },
   {
@@ -43,6 +45,8 @@ protocol.registerSchemesAsPrivileged([
       secure: true,
       supportFetchAPI: true,
       stream: true,
+      corsEnabled: true,
+      bypassCSP: true,
     },
   },
 ]);
@@ -73,7 +77,7 @@ app.once("ready", async () => {
   log.log("App ready. Setting up handlers and protocols...");
 
   // カスタムプロトコルハンドラーを登録
-  protocol.handle("local-image", (request) => {
+  protocol.handle("local-image", async (request) => {
     // Strip query parameters and decode file path
     const urlWithoutProtocol = request.url.replace("local-image://", "");
     const urlWithoutQuery = urlWithoutProtocol.split("?")[0];
@@ -93,7 +97,18 @@ app.once("ready", async () => {
     }
 
     log.debug("Serving local-image:", filePath);
-    return net.fetch(pathToFileURL(filePath).toString());
+    try {
+      const response = await net.fetch(pathToFileURL(filePath).toString());
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set("Access-Control-Allow-Origin", "*");
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
+    } catch (e) {
+      return new Response("Not Found", { status: 404 });
+    }
   });
 
   // アイテム画像用カスタムプロトコルハンドラー

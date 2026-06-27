@@ -55,6 +55,23 @@ export function setupAppHandlers(getMainWindow) {
     return result.filePaths[0];
   });
 
+  // ファイル保存ダイアログ
+  ipcMain.handle("save-file-dialog", async (event, options) => {
+    const mainWindow = getMainWindow();
+    const dialogOptions = {
+      defaultPath: options?.defaultPath,
+      filters: options?.filters || [{ name: "Images", extensions: ["png"] }],
+    };
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, dialogOptions)
+      : await dialog.showSaveDialog(dialogOptions);
+
+    if (result.canceled || !result.filePath) {
+      return null;
+    }
+    return result.filePath;
+  });
+
   // 設定を取得
   ipcMain.handle("get-settings", async () => {
     log.log("get-settings called");
@@ -66,6 +83,7 @@ export function setupAppHandlers(getMainWindow) {
       customTags: store.get("customTags") || [],
       autoUpdateCheck: store.get("autoUpdateCheck") !== false,
       debugMode: store.get("debugMode") === true,
+      bgRemovalAlgorithm: store.get("bgRemovalAlgorithm") || "rmbg",
     };
   });
 
@@ -90,6 +108,9 @@ export function setupAppHandlers(getMainWindow) {
     }
     if (settings.debugMode !== undefined) {
       store.set("debugMode", settings.debugMode);
+    }
+    if (settings.bgRemovalAlgorithm !== undefined) {
+      store.set("bgRemovalAlgorithm", settings.bgRemovalAlgorithm);
     }
     return true;
   });

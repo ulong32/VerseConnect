@@ -33,6 +33,7 @@ export const settingsState = $state({
   customTags: [] as string[],
   autoUpdateCheck: true,
   debugMode: false,
+  bgRemovalAlgorithm: "rmbg" as "rmbg" | "floodfill" | "modnet",
 });
 
 // Derived value: all characters (presets + custom) - exported as getter function
@@ -74,6 +75,9 @@ export async function loadSettings(): Promise<void> {
   if (settings.debugMode !== undefined) {
     settingsState.debugMode = settings.debugMode;
   }
+  if (settings.bgRemovalAlgorithm !== undefined) {
+    settingsState.bgRemovalAlgorithm = settings.bgRemovalAlgorithm;
+  }
 }
 
 // Set auto update check preference
@@ -89,6 +93,16 @@ export async function setDebugMode(enabled: boolean): Promise<void> {
   settingsState.debugMode = enabled;
   if (window.electronAPI) {
     await window.electronAPI.setSettings({ debugMode: enabled });
+  }
+}
+
+// Set background removal algorithm preference
+export async function setBgRemovalAlgorithm(
+  algorithm: "rmbg" | "floodfill" | "modnet",
+): Promise<void> {
+  settingsState.bgRemovalAlgorithm = algorithm;
+  if (window.electronAPI) {
+    await window.electronAPI.setSettings({ bgRemovalAlgorithm: algorithm });
   }
 }
 

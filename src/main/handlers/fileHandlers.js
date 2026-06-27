@@ -1,6 +1,9 @@
 import { logger } from "../utils/logger.js";
 import { ipcMain, shell } from "electron";
 import * as fileService from "../services/fileService.js";
+import { getBackgroundMask } from "../services/bgRemovalService.js";
+import fs from "fs/promises";
+import { getStore } from "../store.js";
 
 const log = logger.withSource("FileHandlers");
 
@@ -62,5 +65,26 @@ export function setupFileHandlers() {
   ipcMain.handle("delete-friend-card", async (event, folderPath, filename) => {
     log.log("delete-friend-card called for filename:", filename, "in:", folderPath);
     return fileService.deleteFriendCard(folderPath, filename);
+  });
+
+  // 背景透過処理を実行してマスクを取得
+  ipcMain.handle("get-background-mask", async (event, imageData) => {
+    if (!imageData) return null;
+    const store = getStore();
+    const algorithm = store.get("bgRemovalAlgorithm") || "rmbg";
+    return await getBackgroundMask(imageData, algorithm);
+  });
+
+  // 透過画像を保存
+  ipcMain.handle("save-transparent-image", async (event, filePath, base64Data) => {
+    try {
+      if (!filePath || !base64Data) return { success: false, error: "Invalid parameters" };
+      const buffer = Buffer.from(base64Data, "base64");
+      await fs.writeFile(filePath, buffer);
+      return { success: true };
+    } catch (error) {
+      console.error("Error saving transparent image:", error);
+      return { success: false, error: String(error) };
+    }
   });
 }

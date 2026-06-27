@@ -12,6 +12,7 @@
     settingsState,
     setAutoUpdateCheck,
     setDebugMode,
+    setBgRemovalAlgorithm,
   } from "$lib/stores/settings.svelte";
   import {
     checkForUpdates,
@@ -28,6 +29,7 @@
   import UserPlusIcon from "@lucide/svelte/icons/user-plus";
   import UsersIcon from "@lucide/svelte/icons/users";
   import XIcon from "@lucide/svelte/icons/x";
+  import Wand2Icon from "@lucide/svelte/icons/wand-2";
   import InfoIcon from "@lucide/svelte/icons/info";
   import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
   import CheckIcon from "@lucide/svelte/icons/check";
@@ -77,6 +79,10 @@
 
   async function handleToggleDebugMode(checked: boolean) {
     await setDebugMode(checked);
+  }
+
+  async function handleBgRemovalAlgorithmChange(algorithm: "rmbg" | "floodfill" | "modnet") {
+    await setBgRemovalAlgorithm(algorithm);
   }
 
   async function handleCheckForUpdates() {
@@ -262,6 +268,79 @@
               </label>
             </div>
           {/if}
+        </div>
+      </section>
+
+      <!-- Image Processing Settings Section -->
+      <section class="mb-8">
+        <h2
+          class="text-lg font-semibold text-white mb-4 flex items-center gap-2"
+        >
+          <Wand2Icon class="size-5 text-pink-400" />
+          画像処理設定
+        </h2>
+        <div class="bg-white/5 rounded-xl p-4 backdrop-blur-sm">
+          <!-- Background Removal Algorithm Preference -->
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col">
+              <span class="text-sm text-white font-medium">背景透過アルゴリズム</span>
+              <span class="text-xs text-gray-400">背景を透過する際に使用するアルゴリズムを選択します。（AIモデルは不安定な場合があります。）</span>
+            </div>
+
+            <div class="flex flex-col gap-2 mt-2">
+              <label class="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <div class="relative flex items-center justify-center">
+                  <input
+                    type="radio"
+                    name="bgAlgorithm"
+                    value="rmbg"
+                    class="peer sr-only"
+                    checked={settingsState.bgRemovalAlgorithm === "rmbg"}
+                    onchange={() => handleBgRemovalAlgorithmChange("rmbg")}
+                  />
+                  <div class="w-5 h-5 rounded-full border-2 border-gray-400 peer-checked:border-pink-500 peer-checked:border-[6px] transition-all"></div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm text-white group-hover:text-pink-300 transition-colors">AIモデル (RMBG-1.4)</span>
+                  <span class="text-xs text-gray-500">高精度。（初回実行時にモデルのダウンロードが必要）</span>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <div class="relative flex items-center justify-center">
+                  <input
+                    type="radio"
+                    name="bgAlgorithm"
+                    value="modnet"
+                    class="peer sr-only"
+                    checked={settingsState.bgRemovalAlgorithm === "modnet"}
+                    onchange={() => handleBgRemovalAlgorithmChange("modnet")}
+                  />
+                  <div class="w-5 h-5 rounded-full border-2 border-gray-400 peer-checked:border-pink-500 peer-checked:border-[6px] transition-all"></div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm text-white group-hover:text-pink-300 transition-colors">AIモデル (Xenova/modnet)</span>
+                  <span class="text-xs text-gray-500">軽量な背景透過モデル。（初回実行時にモデルのダウンロードが必要）</span>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <div class="relative flex items-center justify-center">
+                  <input
+                    type="radio"
+                    name="bgAlgorithm"
+                    value="floodfill"
+                    class="peer sr-only"
+                    checked={settingsState.bgRemovalAlgorithm === "floodfill"}
+                    onchange={() => handleBgRemovalAlgorithmChange("floodfill")}
+                  />
+                  <div class="w-5 h-5 rounded-full border-2 border-gray-400 peer-checked:border-pink-500 peer-checked:border-[6px] transition-all"></div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm text-white group-hover:text-pink-300 transition-colors">塗りつぶし (Flood Fill)</span>
+                  <span class="text-xs text-gray-500">シンプルなアルゴリズム。高速に動作します。手動で透過範囲を追加できます。</span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
       </section>
 

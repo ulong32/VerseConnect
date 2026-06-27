@@ -9,7 +9,14 @@ export default defineConfig({
   },
   lint: { options: { typeAware: true, typeCheck: true } },
   plugins: [tailwindcss(), sveltekit()],
-
+  build: {
+    rollupOptions: {
+      external: ["sharp"],
+    },
+  },
+  optimizeDeps: {
+    exclude: ["sharp"],
+  },
   test: {
     expect: { requireAssertions: true },
 

@@ -42,9 +42,15 @@ declare global {
     customTags: string[]; // App-wide tag presets
     autoUpdateCheck: boolean;
     debugMode: boolean;
+    bgRemovalAlgorithm: "rmbg" | "floodfill" | "modnet";
   }
 
   interface SelectFileOptions {
+    defaultPath?: string;
+    filters?: { name: string; extensions: string[] }[];
+  }
+
+  interface SaveFileDialogOptions {
     defaultPath?: string;
     filters?: { name: string; extensions: string[] }[];
   }
@@ -172,6 +178,19 @@ declare global {
       base64Data: string,
     ) => Promise<FriendCardResult>;
     deleteFriendCard: (folderPath: string, filename: string) => Promise<FriendCardResult>;
+    // Background removal
+    getBackgroundMask: (imageData: {
+      data: Uint8Array;
+      width: number;
+      height: number;
+      seedPoints?: { x: number; y: number }[];
+      tolerance?: number;
+    }) => Promise<Uint8Array | null>;
+    saveFileDialog: (options?: SaveFileDialogOptions) => Promise<string | null>;
+    saveTransparentImage: (
+      filePath: string,
+      base64Data: string,
+    ) => Promise<{ success: boolean; error?: string }>;
     // Aipri API
     aipriCheckSession: () => Promise<AipriSessionCheckResult>;
     aipriClearSession: () => Promise<AipriClearSessionResult>;

@@ -22,11 +22,13 @@
     "test": "npm run test:unit -- --run"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "electron-context-menu": "^4.1.2",
     "electron-serve": "^3.0.1",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
-    "electron-window-state": "^5.0.3"
+    "electron-window-state": "^5.0.3",
+    "sharp": "^0.35.2"
   },
   "devDependencies": {
     "@lucide/svelte": "^1.16.0",

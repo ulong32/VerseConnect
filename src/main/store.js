@@ -2,7 +2,7 @@ import { app } from "electron";
 import fs from "fs";
 import path from "path";
 
-/** @type {import('electron-store').default<{folderPath: string, itemImageFolderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{accountId?: string, name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountId: string | null, aipriActiveAccountName: string | null}> | undefined} */
+/** @type {import('electron-store').default<{folderPath: string, itemImageFolderPath: string, customCharacters: string[], customTags: string[], aipriAccounts: Array<{accountId?: string, name: string, cardId: string, birthdayM: string, birthdayD: string, sessionCookie: string | null, profileImagePath: string | null}>, aipriActiveAccountId: string | null, aipriActiveAccountName: string | null, bgRemovalAlgorithm: "rmbg" | "floodfill" | "modnet"}> | undefined} */
 let store;
 
 export async function initStore() {
@@ -17,6 +17,7 @@ export async function initStore() {
       aipriAccounts: [], // Array of AipriAccount
       aipriActiveAccountId: null, // Currently active account id
       aipriActiveAccountName: null, // Currently active account name
+      bgRemovalAlgorithm: "rmbg", // 'rmbg' or 'floodfill'
     },
   });
 
